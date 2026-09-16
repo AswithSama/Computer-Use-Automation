@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <a href="/">Dashboard</a>
+    <span>/</span>
+    <span>Members</span>
+</div>
+
+<div class="panel search-panel">
+    <div class="panel-heading">
+        <div>
+            <span class="eyebrow">MEMBER SERVICES</span>
+            <h2>Member lookup</h2>
+            <p>Search using the institution-assigned member identifier.</p>
+        </div>
+    </div>
+
+    <form class="search-form" method="get" action="/members">
+        <div class="field">
+            <label for="member_id">Member ID</label>
+            <input
+                id="member_id"
+                name="member_id"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="Enter member ID"
+                value="{{ query }}"
+            >
+            <small>Numeric identifier assigned to the member record.</small>
+        </div>
+
+        <div class="field disabled-field">
+            <label for="last_name">Last Name</label>
+            <input id="last_name" name="last_name" type="text" placeholder="Optional" disabled>
+            <small>Disabled in this demonstration environment.</small>
+        </div>
+
+        <div class="field disabled-field">
+            <label for="account_number">Account Number</label>
+            <input id="account_number" name="account_number" type="text" placeholder="Optional" disabled>
+            <small>Disabled in this demonstration environment.</small>
+        </div>
+
+        <div class="form-actions">
+            <button class="button primary" type="submit">Search</button>
+            <a class="button secondary" href="/members">Clear</a>
+        </div>
+    </form>
+</div>
+
+{% if error %}
+<div class="notice error" role="alert">
+    <strong>Search could not be completed.</strong>
+    <span>{{ error }}</span>
+</div>
+{% endif %}
+
+{% if searched and member %}
+<div class="panel">
+    <div class="panel-heading compact">
+        <div>
+            <span class="eyebrow">SEARCH RESULTS</span>
+            <h2>1 matching record</h2>
+        </div>
+    </div>
+
+    <table class="data-table result-table">
+        <thead>
+            <tr>
+                <th>Member ID</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Relationship Since</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="mono">{{ member.member_id }}</td>
+                <td>{{ member.name }}</td>
+                <td><span class="pill success">{{ member.status }}</span></td>
+                <td>{{ member.joined }}</td>
+                <td class="align-right">
+                    <a class="table-link" href="/members/{{ member.member_id }}">Open Member</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if not searched %}
+<div class="panel subtle-panel">
+    <div class="empty-state">
+        <div class="empty-icon">⌕</div>
+        <h3>No search submitted</h3>
+        <p>Enter a Member ID above to retrieve a synthetic member record.</p>
+        <div class="demo-hint">
+            Demo IDs available in the local fixture data include
+            <span class="mono">12345</span>,
+            <span class="mono">67890</span>,
+            <span class="mono">11111</span>, and
+            <span class="mono">54321</span>.
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <a href="/">Dashboard</a>
+    <span>/</span>
+    <a href="/members">Members</a>
+    {% if member %}
+        <span>/</span>
+        <a href="/members/{{ member.member_id }}">{{ member.member_id }}</a>
+    {% endif %}
+    <span>/</span>
+    <span>{{ account_id }}</span>
+</div>
+
+{% if not account %}
+<div class="notice error" role="alert">
+    <strong>Account record unavailable.</strong>
+    <span>The requested account could not be located.</span>
+</div>
+
+<a class="button secondary" href="/members">Return to Member Search</a>
+
+{% elif permission_denied %}
+<div class="record-header">
+    <div>
+        <span class="eyebrow">ACCOUNT {{ account.account_id }}</span>
+        <h2>{{ account.nickname }}</h2>
+        <div class="record-meta">
+            <span>{{ account.type }}</span>
+            <span>•</span>
+            <span>Member {{ member.member_id }}</span>
+        </div>
+    </div>
+    <span class="pill danger">Restricted</span>
+</div>
+
+<div class="notice error permission-box" role="alert">
+    <strong>Permission denied.</strong>
+    <span>
+        This account is restricted. Your current operator role is not authorized to view balances
+        or transaction details. Escalation to an authorized operator is required.
+    </span>
+</div>
+
+<div class="panel">
+    <div class="panel-heading compact">
+        <div>
+            <span class="eyebrow">ACCESS CONTROL</span>
+            <h2>Restricted account</h2>
+        </div>
+    </div>
+    <dl class="detail-list">
+        <div>
+            <dt>Account ID</dt>
+            <dd class="mono">{{ account.account_id }}</dd>
+        </div>
+        <div>
+            <dt>Account Type</dt>
+            <dd>{{ account.type }}</dd>
+        </div>
+        <div>
+            <dt>Access Status</dt>
+            <dd>Human authorization required</dd>
+        </div>
+    </dl>
+</div>
+
+{% else %}
+
+<div class="record-header">
+    <div>
+        <span class="eyebrow">ACCOUNT {{ account.account_id }}</span>
+        <h2>{{ account.nickname }}</h2>
+        <div class="record-meta">
+            <span>{{ account.type }}</span>
+            <span>•</span>
+            <span>Member {{ member.member_id }} — {{ member.name }}</span>
+        </div>
+    </div>
+    <span class="pill success">{{ account.status }}</span>
+</div>
+
+<div class="balance-grid">
+    <div class="balance-card primary-balance">
+        <span>Current Balance</span>
+        <strong>${{ "{:,.2f}".format(account.current_balance) }}</strong>
+        <small>Ledger balance as of current processing date</small>
+    </div>
+
+    <div class="balance-card">
+        <span>Available Balance</span>
+        <strong>${{ "{:,.2f}".format(account.available_balance) }}</strong>
+        <small>Available for withdrawal or transfer</small>
+    </div>
+
+    <div class="balance-card">
+        <span>Account Status</span>
+        <strong>{{ account.status }}</strong>
+        <small>{{ account.type }} product</small>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <span class="eyebrow">RECENT ACTIVITY</span>
+            <h2>Transactions</h2>
+        </div>
+    </div>
+
+    {% if account.transactions %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Posting Date</th>
+                <th>Description</th>
+                <th class="align-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in account.transactions %}
+            <tr>
+                <td>{{ transaction.date }}</td>
+                <td>{{ transaction.description }}</td>
+                <td class="money {% if transaction.amount < 0 %}negative{% endif %}">
+                    {% if transaction.amount >= 0 %}+{% endif %}${{ "{:,.2f}".format(transaction.amount) }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state small">
+        <h3>No recent activity</h3>
+        <p>No transactions are available for the selected reporting window.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <div class="panel-heading compact">
+        <div>
+            <span class="eyebrow">ACCOUNT PROFILE</span>
+            <h2>Account information</h2>
+        </div>
+    </div>
+
+    <dl class="detail-list">
+        <div>
+            <dt>Account ID</dt>
+            <dd class="mono">{{ account.account_id }}</dd>
+        </div>
+        <div>
+            <dt>Product Type</dt>
+            <dd>{{ account.type }}</dd>
+        </div>
+        <div>
+            <dt>Nickname</dt>
+            <dd>{{ account.nickname }}</dd>
+        </div>
+        <div>
+            <dt>Owner Member</dt>
+            <dd>{{ member.name }} ({{ member.member_id }})</dd>
+        </div>
+    </dl>
+</div>
+
+{% endif %}
+{% endblock %}

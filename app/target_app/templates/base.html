@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} | Northstar Core Administration</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+</head>
+<body>
+    <div class="shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">NS</div>
+                <div>
+                    <div class="brand-title">Northstar Core</div>
+                    <div class="brand-subtitle">Administration</div>
+                </div>
+            </div>
+
+            <div class="environment-badge">DEMO ENVIRONMENT</div>
+
+            <nav class="nav">
+                <a class="nav-item {% if active_page == 'dashboard' %}active{% endif %}" href="/">
+                    <span class="nav-icon">▦</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item {% if active_page == 'members' %}active{% endif %}" href="/members">
+                    <span class="nav-icon">◉</span>
+                    <span>Members</span>
+                </a>
+                <a class="nav-item {% if active_page == 'accounts' %}active{% endif %}" href="/accounts">
+                    <span class="nav-icon">▤</span>
+                    <span>Accounts</span>
+                </a>
+                <a class="nav-item {% if active_page == 'operations' %}active{% endif %}" href="/operations">
+                    <span class="nav-icon">⇄</span>
+                    <span>Operations</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-dot-row">
+                    <span class="status-dot"></span>
+                    <span>Core connection online</span>
+                </div>
+                <div class="build-info">Build 14.7.2-demo</div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <div class="topbar-label">INTERNAL OPERATIONS</div>
+                    <h1>{{ page_title }}</h1>
+                </div>
+
+                <div class="operator">
+                    <div class="operator-avatar">OP</div>
+                    <div>
+                        <strong>Demo Operator</strong>
+                        <span>Service Desk</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="content">
+                {% block content %}{% endblock %}
+            </section>
+
+            <footer class="footer">
+                Synthetic demonstration system. No real customer or financial data.
+            </footer>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# IDE / editor
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build / package artifacts
+build/
+dist/
+*.egg-info/
+
+# Playwright / browser artifacts
+playwright-report/
+test-results/
+blob-report/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp

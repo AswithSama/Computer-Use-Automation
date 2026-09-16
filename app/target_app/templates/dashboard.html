@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="notice info">
+    <strong>Training environment:</strong>
+    This internal console contains synthetic records only. Use the Members module to locate member and account information.
+</div>
+
+{% if placeholder_message %}
+<div class="notice warning">
+    {{ placeholder_message }}
+</div>
+{% endif %}
+
+<div class="metric-grid">
+    <div class="metric-card">
+        <span class="metric-label">System Status</span>
+        <strong>Operational</strong>
+        <span class="metric-detail">All demo services available</span>
+    </div>
+    <div class="metric-card">
+        <span class="metric-label">Synthetic Members</span>
+        <strong>{{ member_count }}</strong>
+        <span class="metric-detail">Available for lookup</span>
+    </div>
+    <div class="metric-card">
+        <span class="metric-label">Pending Reviews</span>
+        <strong>2</strong>
+        <span class="metric-detail">Demo operational queue</span>
+    </div>
+    <div class="metric-card">
+        <span class="metric-label">Session</span>
+        <strong>Active</strong>
+        <span class="metric-detail">Operator authenticated</span>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <span class="eyebrow">COMMON TASKS</span>
+            <h2>Service shortcuts</h2>
+        </div>
+    </div>
+
+    <div class="shortcut-grid">
+        <a class="shortcut" href="/members">
+            <span class="shortcut-number">01</span>
+            <div>
+                <strong>Member Search</strong>
+                <p>Locate a member by member ID and review linked accounts.</p>
+            </div>
+        </a>
+        <a class="shortcut muted" href="/accounts">
+            <span class="shortcut-number">02</span>
+            <div>
+                <strong>Account Inquiry</strong>
+                <p>Review account status, balances, and recent activity.</p>
+            </div>
+        </a>
+        <a class="shortcut muted" href="/operations">
+            <span class="shortcut-number">03</span>
+            <div>
+                <strong>Operations Queue</strong>
+                <p>Review pending service and back-office operations.</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <span class="eyebrow">ACTIVITY</span>
+            <h2>Recent system events</h2>
+        </div>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Module</th>
+                <th>Event</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>09:16</td>
+                <td>Members</td>
+                <td>Member profile viewed</td>
+                <td><span class="pill success">Completed</span></td>
+            </tr>
+            <tr>
+                <td>08:52</td>
+                <td>Accounts</td>
+                <td>Balance inquiry</td>
+                <td><span class="pill success">Completed</span></td>
+            </tr>
+            <tr>
+                <td>08:35</td>
+                <td>Operations</td>
+                <td>Restricted action review</td>
+                <td><span class="pill warning">Escalated</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
