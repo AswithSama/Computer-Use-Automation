@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from app.agent.capability.input_extraction import (
+from app.agent.capability.inputs.input_extraction import (
     InputCandidate,
     InputExtractionResult,
 )

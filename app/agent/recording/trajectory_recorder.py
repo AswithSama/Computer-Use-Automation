@@ -1,4 +1,4 @@
-from app.agent.recording.models import (
+from app.agent.schemas.recording import (
     RecordedState,
     RecordedTransition,
 )

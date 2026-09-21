@@ -1,6 +1,6 @@
 from urllib.parse import urljoin, urlparse
 
-from app.agent.discovery.models import ActionType, BrowserAction
+from app.agent.schemas.discovery import ActionType, BrowserAction
 
 
 class ActionExecutor:

@@ -2,7 +2,7 @@ import json
 
 from openai import OpenAI
 
-from app.agent.capability.input_extraction import (
+from app.agent.capability.inputs.input_extraction import (
     InputExtractionResult,
 )
 from app.agent.capability.models import CapabilityContext

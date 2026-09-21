@@ -3,8 +3,8 @@ from app.agent.capability.models import (
     CapabilityCompletionContext,
     CapabilityContext,
 )
-from app.agent.discovery.models import ActionType
-from app.agent.recording.models import DiscoveryResult
+from app.agent.schemas.discovery import ActionType
+from app.agent.schemas.recording import DiscoveryResult
 
 
 RELEVANT_INTERACTION_ACTIONS = {
@@ -44,10 +44,9 @@ class CapabilityContextBuilder:
         completion = CapabilityCompletionContext(
             result=discovery_result.result,
             reason=discovery_result.finish_reason,
+            outputs=discovery_result.outputs,
             final_url=discovery_result.final_state.url,
-            final_observation=(
-                discovery_result.final_state.observation
-            ),
+            final_observation=discovery_result.final_state.observation,
         )
 
         return CapabilityContext(

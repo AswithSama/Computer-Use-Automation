@@ -1,6 +1,6 @@
 from app.agent.discovery.browser import BrowserSession
-from app.agent.discovery.models import ActionType, BrowserAction
-from app.agent.recording.models import RecordedState, RecordedTransition
+from app.agent.schemas.discovery import ActionType, BrowserAction
+from app.agent.schemas.recording import RecordedState, RecordedTransition
 from app.agent.recording.state_fingerprint import build_state_fingerprint
 from app.agent.recording.trajectory_recorder import TrajectoryRecorder
 

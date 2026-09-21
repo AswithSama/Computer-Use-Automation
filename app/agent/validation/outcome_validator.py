@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from app.agent.discovery.models import ActionType, BrowserAction
+from app.agent.schemas.discovery import ActionType, BrowserAction
 
 
 @dataclass

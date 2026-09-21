@@ -86,6 +86,26 @@ MEMBERS = {
             },
         ],
     },
+    "22222": {
+        "member_id": "22222",
+        "name": "Casey Test",
+        "status": "Active",
+        "joined": "2024-03-15",
+        "phone": "(555) 010-5566",
+        "email": "casey.test@example.test",
+        "accounts": [
+            {
+                "account_id": "CHK-50091",
+                "type": "Checking",
+                "nickname": "Everyday Checking",
+                "status": "Open",
+                "current_balance": 750.00,
+                "available_balance": 750.00,
+                "restricted": False,
+                "transactions": [],
+            },
+        ],
+    },
     "54321": {
         "member_id": "54321",
         "name": "Taylor Reed",

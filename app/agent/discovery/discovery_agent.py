@@ -2,18 +2,28 @@ from urllib.parse import urlparse
 
 from app.agent.discovery.browser import BrowserSession
 from app.agent.discovery.executor import ActionExecutor
-from app.agent.discovery.models import ActionType
+from app.agent.schemas.discovery import ActionType
 
-from app.agent.llm.llm import BrowserLLM
+from app.agent.llm.browser_llm import BrowserLLM
 from app.agent.validation.value_validator_llm import ValueValidatorLLM, ValidatorDecision
 from app.agent.validation.validator import ActionValidator, ValidationStatus
 from app.agent.validation.outcome_validator import OutcomeValidator
-
+from app.agent.discovery.output_binding.output_grounder import OutputGrounder
+from app.agent.discovery.output_binding.output_locator import OutputLocatorBuilder
+from app.agent.discovery.output_binding.output_binding_llm import (
+    OutputBindingLLM,
+)
+from app.agent.discovery.output_binding.output_binding_verifier import (
+    OutputBindingVerifier,
+)
 from app.agent.observability.discovery_logger import DiscoveryLogger
-from app.agent.recording.models import (
+from app.agent.schemas.recording import (
     DiscoveryResult,
+    DiscoveredOutputLocation,
     RecordedState,
     RecordedTransition,
+    VerifiedTableOutputBinding,
+    TableRowMatchBinding,
 )
 from app.agent.recording.state_fingerprint import build_state_fingerprint
 from app.agent.recording.trajectory_recorder import TrajectoryRecorder
@@ -57,6 +67,10 @@ class DiscoveryAgent:
         # Records the complete successful execution trace
         # and maintains the stack-cleaned candidate path.
         trajectory_recorder = TrajectoryRecorder()
+        # Grounds discovered outputs against the final
+        # browser state and collects reusable structural evidence.
+        output_grounder = OutputGrounder()
+        output_locator_builder = OutputLocatorBuilder()
 
         failure_count = 0
 
@@ -284,7 +298,9 @@ class DiscoveryAgent:
                     if not action.result:
                         failure_count += 1
 
-                        print("\nRejected: finish action did not contain a result.")
+                        print(
+                            "\nRejected: finish action did not contain a result."
+                        )
 
                         logger.log(
                             "finish_rejected",
@@ -310,6 +326,86 @@ class DiscoveryAgent:
                     final_observation = browser.observe()
                     final_url = browser.page.url
 
+                    output_locations = []
+
+                    binding_llm = OutputBindingLLM(
+                        client=llm.client,
+                        model=llm.model,
+                    )
+                    binding_verifier = OutputBindingVerifier()
+
+                    for output in action.outputs or []:
+                        print("\n========== OUTPUT DOM LOCATION ==========")
+
+                        location = output_locator_builder.locate(
+                            output=output,
+                            page=browser.page,
+                        )
+
+                        print(
+                            "\n========== OUTPUT STRUCTURAL CONTEXT =========="
+                        )
+                        print(f"Output: {location.output_name}")
+                        print(f"Type: {location.output_type}")
+                        print(f"Observed value: {location.observed_value}")
+                        print(f"Structure: {location.structure}")
+                        print(f"Tag: {location.tag_name}")
+                        print(f"Selector: {location.selector}")
+                        print(f"Headers: {location.headers}")
+                        print(f"Containing row: {location.containing_row}")
+                        print(f"Output column: {location.output_column}")
+
+                        binding_proposal = binding_llm.propose(
+                            context=location,
+                        )
+
+                        print(
+                            "\n========== OUTPUT BINDING PROPOSAL =========="
+                        )
+                        print(binding_proposal.model_dump_json(indent=2))
+
+                        binding_verification = binding_verifier.verify(
+                            context=location,
+                            proposal=binding_proposal,
+                            page=browser.page,
+                        )
+
+                        print(
+                            "\n========== OUTPUT BINDING VERIFICATION =========="
+                        )
+                        print(f"Valid: {binding_verification.valid}")
+                        print(f"Reason: {binding_verification.reason}")
+                        print(
+                            f"Resolved value: "
+                            f"{binding_verification.resolved_value}"
+                        )
+
+                        if not binding_verification.valid:
+                            raise ValueError(
+                                f"Output binding verification failed for "
+                                f"'{location.output_name}': "
+                                f"{binding_verification.reason}"
+                            )
+
+                        binding = binding_proposal.binding
+
+                        output_locations.append(
+                            DiscoveredOutputLocation(
+                                output_name=location.output_name,
+                                output_type=location.output_type,
+                                observed_value=location.observed_value,
+                                binding=VerifiedTableOutputBinding(
+                                    kind="table",
+                                    row_match=TableRowMatchBinding(
+                                        column=binding.row_match.column,
+                                        value=binding.row_match.value,
+                                    ),
+                                    value_column=binding.value_column,
+                                ),
+                            )
+                        )
+
+                    # All output bindings have now been processed.
                     final_state = RecordedState(
                         url=final_url,
                         observation=final_observation,
@@ -320,10 +416,16 @@ class DiscoveryAgent:
                     )
 
                     discovery_result = DiscoveryResult(
-                        result=action.result or "",
+                        result=action.result,
                         finish_reason=action.reason,
-                        execution_trace=trajectory_recorder.get_execution_trace(),
-                        candidate_path=trajectory_recorder.get_candidate_path(),
+                        outputs=action.outputs or [],
+                        output_locations=output_locations,
+                        execution_trace=(
+                            trajectory_recorder.get_execution_trace()
+                        ),
+                        candidate_path=(
+                            trajectory_recorder.get_candidate_path()
+                        ),
                         final_state=final_state,
                     )
 
@@ -331,13 +433,17 @@ class DiscoveryAgent:
                         "run_finished",
                         step=step,
                         result=action.result,
-                        execution_trace_length=len(discovery_result.execution_trace),
-                        candidate_path_length=len(discovery_result.candidate_path),
+                        execution_trace_length=len(
+                            discovery_result.execution_trace
+                        ),
+                        candidate_path_length=len(
+                            discovery_result.candidate_path
+                        ),
                         final_url=final_state.url,
                     )
 
                     return discovery_result
-
+                
                 # -------------------------
                 # HUMAN HANDOFF
                 # -------------------------

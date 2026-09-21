@@ -14,8 +14,6 @@ class InputCandidate(BaseModel):
         "boolean",
         "date",
     ]
-    required: bool
-
     source_step: int
     observed_value: str
 

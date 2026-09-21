@@ -4,7 +4,7 @@ from urllib.parse import urljoin, urlparse
 
 from pydantic import BaseModel
 
-from app.agent.discovery.models import ActionType, BrowserAction
+from app.agent.schemas.discovery import ActionType, BrowserAction
 
 
 class ValidationStatus(str, Enum):

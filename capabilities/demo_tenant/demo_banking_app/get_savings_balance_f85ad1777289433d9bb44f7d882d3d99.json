@@ -1,0 +1,112 @@
+{
+  "tenant_id": "demo_tenant",
+  "app_id": "demo_banking_app",
+  "approval_status": "draft",
+  "version": 1,
+  "artifact": {
+    "schema_version": "1.0",
+    "capability_id": "get_savings_balance",
+    "description": "Retrieve the savings balance for a member.",
+    "inputs": [
+      {
+        "name": "member_id",
+        "type": "string",
+        "required": true,
+        "description": "Member ID entered into the 'Member ID' search field to retrieve the member record and balances (from step 2)."
+      }
+    ],
+    "actions": [
+      {
+        "action": "click",
+        "target": {
+          "role": "link",
+          "name": "◉ Members"
+        },
+        "value": null,
+        "url": null
+      },
+      {
+        "action": "fill",
+        "target": {
+          "role": "textbox",
+          "name": "Member ID"
+        },
+        "value": "{{member_id}}",
+        "url": null
+      },
+      {
+        "action": "click",
+        "target": {
+          "role": "button",
+          "name": "Search"
+        },
+        "value": null,
+        "url": null
+      },
+      {
+        "action": "click",
+        "target": {
+          "role": "link",
+          "name": "Open Member"
+        },
+        "value": null,
+        "url": null
+      }
+    ],
+    "checkpoints": [
+      {
+        "after_action": 1,
+        "url_pattern": "/members",
+        "required_text": []
+      },
+      {
+        "after_action": 3,
+        "url_pattern": "/members?member_id={{member_id}}",
+        "required_text": []
+      },
+      {
+        "after_action": 4,
+        "url_pattern": "/members/{{member_id}}",
+        "required_text": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "savings_balance",
+        "type": "currency",
+        "binding": {
+          "kind": "table",
+          "row_match": {
+            "column": "Type",
+            "value": "Savings"
+          },
+          "value_column": "Current Balance"
+        }
+      }
+    ]
+  },
+  "business_outcome_rules": [
+    {
+      "after_action": 3,
+      "code": "member_not_found",
+      "reason": "The requested member was not found.",
+      "url_pattern": "/members?member_id={{member_id}}",
+      "kind": "visible_text",
+      "visible_text": "No member record was found for ID {{member_id}}.",
+      "row_match_column": null,
+      "row_match_value": null,
+      "required_column": null
+    },
+    {
+      "after_action": 4,
+      "code": "savings_account_not_found",
+      "reason": "The requested member has no savings account.",
+      "url_pattern": "/members/{{member_id}}",
+      "kind": "table_row_absent",
+      "visible_text": null,
+      "row_match_column": "Type",
+      "row_match_value": "Savings",
+      "required_column": "Current Balance"
+    }
+  ]
+}

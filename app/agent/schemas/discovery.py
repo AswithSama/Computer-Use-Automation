@@ -13,10 +13,25 @@ class ActionType(str, Enum):
     REQUEST_VISUAL = "request_visual"
     REQUEST_HUMAN = "request_human"
 
+from typing import Literal
+
+
+class DiscoveredOutput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    type: Literal[
+        "string",
+        "integer",
+        "number",
+        "boolean",
+        "date",
+        "currency",
+    ]
+    value: str
 
 class BrowserAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
     action: ActionType
 
     # Reference from the Playwright AI snapshot.
@@ -34,5 +49,6 @@ class BrowserAction(BaseModel):
 
     # Used when action == finish.
     result: str | None = None
+    outputs: list[DiscoveredOutput] | None = None
 
     reason: str

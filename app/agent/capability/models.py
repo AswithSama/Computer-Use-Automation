@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from app.agent.discovery.models import ActionType
+from app.agent.schemas.discovery import ActionType, DiscoveredOutput
 
 
 class CapabilityActionContext(BaseModel):
@@ -23,7 +23,7 @@ class CapabilityCompletionContext(BaseModel):
 
     result: str
     reason: str
-
+    outputs: list[DiscoveredOutput]
     final_url: str
     final_observation: str
 
