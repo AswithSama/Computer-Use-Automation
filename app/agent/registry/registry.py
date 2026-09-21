@@ -1,45 +1,18 @@
-import json
-import re
-from dataclasses import asdict
-from pathlib import Path
-from typing import Literal
-from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+import logging
+import re
+from pathlib import Path
+from uuid import uuid4
 
 from app.agent.schemas.capability import CapabilityArtifact
 from app.agent.schemas.outcomes import BusinessOutcomeRule
+from app.agent.schemas.registry import (
+    SelectionContext,
+    StoredCapability,
+)
 
 
-ApprovalStatus = Literal["draft", "approved", "rejected"]
-
-class SelectionContext(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    use_when: str
-    workflow_summary: str
-    example_goals: list[str] = Field(default_factory=list)
-
-class StoredCapability(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    # Registry metadata: supplied by trusted application context.
-    tenant_id: str
-    app_id: str
-
-    # Every new capability starts as a draft.
-    approval_status: ApprovalStatus = "draft"
-
-    # Registry version; distinct from the artifact schema version.
-    version: int = Field(default=1, ge=1)
-
-    artifact: CapabilityArtifact
-    selection_context: SelectionContext | None = None
-
-    # Pydantic serializes the rule dataclasses through this model.
-    business_outcome_rules: list[BusinessOutcomeRule] = Field(
-        default_factory=list
-    )
+logger = logging.getLogger(__name__)
 
 
 class CapabilityRegistry:
@@ -93,16 +66,61 @@ class CapabilityRegistry:
             f"{self._safe_id(artifact.capability_id)}_"
             f"{uuid4().hex}.json"
         )
+
         path = folder / filename
 
         with path.open("x", encoding="utf-8") as stream:
             stream.write(stored.model_dump_json(indent=2) + "\n")
 
         return path
+
     def load(self, path: Path) -> StoredCapability:
         return StoredCapability.model_validate_json(
             path.read_text(encoding="utf-8")
         )
+
+    def list_drafts(self) -> list[Path]:
+        """
+        Return pending capability draft paths across all tenants
+        and applications.
+
+        Invalid records and records whose metadata does not match
+        their registry location are skipped.
+        """
+        if not self.directory.exists():
+            return []
+
+        pending = []
+
+        for path in sorted(self.directory.glob("*/*/*.json")):
+            try:
+                stored = self.load(path)
+            except Exception as exc:
+                logger.warning(
+                    "Could not load %s: %s",
+                    path,
+                    exc,
+                )
+                continue
+
+            if stored.approval_status != "draft":
+                continue
+
+            # Verify that the stored metadata agrees with
+            # the tenant/application directory.
+            if (
+                path.parent.name != stored.app_id
+                or path.parent.parent.name != stored.tenant_id
+            ):
+                logger.warning(
+                    "Registry location mismatch: %s",
+                    path,
+                )
+                continue
+
+            pending.append(path)
+
+        return pending
 
     def list_eligible(
         self,
@@ -133,6 +151,25 @@ class CapabilityRegistry:
 
         return eligible
 
+    def is_approved(
+        self,
+        draft: StoredCapability,
+    ) -> bool:
+        """
+        Check whether the same capability version has already
+        been approved for this tenant and application.
+        """
+        eligible = self.list_eligible(
+            tenant_id=draft.tenant_id,
+            app_id=draft.app_id,
+        )
+
+        return any(
+            existing.artifact.capability_id
+            == draft.artifact.capability_id
+            and existing.version == draft.version
+            for _, existing in eligible
+        )
 
     def approve_draft(self, draft_path: Path) -> Path:
         draft_path = Path(draft_path).resolve()
@@ -145,25 +182,21 @@ class CapabilityRegistry:
         ).resolve()
 
         if draft_path.parent != expected_folder:
-            raise ValueError("Draft is outside its registered tenant/app folder.")
+            raise ValueError(
+                "Draft is outside its registered tenant/app folder."
+            )
 
         if draft.approval_status != "draft":
-            raise ValueError("Only draft capabilities can be approved.")
+            raise ValueError(
+                "Only draft capabilities can be approved."
+            )
 
-        # Do not approve two different artifacts under the same
-        # tenant, app, capability ID, and version.
-        for _, existing in self.list_eligible(
-            tenant_id=draft.tenant_id,
-            app_id=draft.app_id,
-        ):
-            if (
-                existing.artifact.capability_id
-                == draft.artifact.capability_id
-                and existing.version == draft.version
-            ):
-                raise ValueError(
-                    "An approved capability with this ID and version already exists."
-                )
+        # Prevent duplicate approved capability versions.
+        if self.is_approved(draft):
+            raise ValueError(
+                "An approved capability with this ID "
+                "and version already exists."
+            )
 
         approved = StoredCapability.model_validate(
             {
@@ -177,8 +210,11 @@ class CapabilityRegistry:
             f"_v{draft.version}_approved_{uuid4().hex}.json"
         )
 
-        # Create a new approved snapshot. Never overwrite the draft.
+        # Create a new approved snapshot.
+        # Never overwrite the original draft.
         with approved_path.open("x", encoding="utf-8") as stream:
-            stream.write(approved.model_dump_json(indent=2) + "\n")
+            stream.write(
+                approved.model_dump_json(indent=2) + "\n"
+            )
 
         return approved_path

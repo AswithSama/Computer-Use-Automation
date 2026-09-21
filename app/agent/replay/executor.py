@@ -9,7 +9,6 @@ from app.agent.replay.models import (
 
 
 class ReplayActionExecutor:
-
     def __init__(self, page):
         self.page = page
 
@@ -17,125 +16,94 @@ class ReplayActionExecutor:
         self,
         action: CapabilityAction,
     ) -> ReplayActionResult:
+        action_may_have_executed = False
 
         try:
-            if action.action == ActionType.CLICK:
-                return self._click(action)
+            if action.action not in {
+                ActionType.CLICK,
+                ActionType.FILL,
+            }:
+                return self._invalid_action(
+                    "The artifact contains an unsupported replay action."
+                )
 
-            if action.action == ActionType.FILL:
-                return self._fill(action)
+            if action.target is None:
+                return self._invalid_action(
+                    "The artifact action is missing its target definition."
+                )
 
-            return ReplayActionResult(
-                success=False,
-                status=ReplayActionStatus.EXECUTION_ERROR,
-                reason=(
-                    f"Replay does not support action "
-                    f"'{action.action.value}' yet."
-                ),
+            if (
+                not action.target.role.strip()
+                or not action.target.name.strip()
+            ):
+                return self._invalid_action(
+                    "The artifact target requires a nonempty role and name."
+                )
+
+            if (
+                action.action == ActionType.FILL
+                and action.value is None
+            ):
+                return self._invalid_action(
+                    "The artifact fill action is missing its value."
+                )
+
+            # Preserve the current matching behavior.
+            locator = self.page.get_by_role(
+                action.target.role,
+                name=action.target.name,
+                exact=False,
             )
 
-        except PlaywrightTimeoutError as exc:
+            count = locator.count()
+
+            if count != 1:
+                return ReplayActionResult(
+                    success=False,
+                    status=ReplayActionStatus.TARGET_NOT_FOUND,
+                    reason=(
+                        "The target is missing or matches multiple elements."
+                    ),
+                    action_may_have_executed=False,
+                )
+
+            # Once click/fill is invoked, an exception does not establish
+            # whether the action took effect.
+            action_may_have_executed = True
+
+            if action.action == ActionType.CLICK:
+                locator.click()
+            else:
+                locator.fill(action.value)
+
+            return ReplayActionResult(
+                success=True,
+                status=ReplayActionStatus.SUCCESS,
+                reason="The replay action completed.",
+                action_may_have_executed=True,
+            )
+
+        except PlaywrightTimeoutError:
             return ReplayActionResult(
                 success=False,
                 status=ReplayActionStatus.TIMEOUT,
-                reason=str(exc),
+                reason="Action execution timed out.",
+                action_may_have_executed=action_may_have_executed,
             )
 
-        except Exception as exc:
+        except Exception:
             return ReplayActionResult(
                 success=False,
                 status=ReplayActionStatus.EXECUTION_ERROR,
-                reason=str(exc),
+                reason="An action execution error occurred.",
+                action_may_have_executed=action_may_have_executed,
             )
 
-    def _get_locator(
-        self,
-        action: CapabilityAction,
-    ):
-        if action.target is None:
-            return None, ReplayActionResult(
-                success=False,
-                status=ReplayActionStatus.TARGET_NOT_FOUND,
-                reason="Interactive replay action has no target.",
-            )
-
-        locator = self.page.get_by_role(
-            action.target.role,
-            name=action.target.name,
-            exact=False,
-        )
-
-        count = locator.count()
-
-        if count == 0:
-            return None, ReplayActionResult(
-                success=False,
-                status=ReplayActionStatus.TARGET_NOT_FOUND,
-                reason=(
-                    f"No element found for "
-                    f"role={action.target.role}, "
-                    f"name={action.target.name}."
-                ),
-            )
-
-        if count > 1:
-            return None, ReplayActionResult(
-                success=False,
-                status=ReplayActionStatus.TARGET_NOT_FOUND,
-                reason=(
-                    f"Ambiguous target: found {count} elements for "
-                    f"role={action.target.role}, "
-                    f"name={action.target.name}."
-                ),
-            )
-
-        return locator, None
-
-    def _click(
-        self,
-        action: CapabilityAction,
-    ) -> ReplayActionResult:
-
-        locator, error = self._get_locator(action)
-
-        if error is not None:
-            return error
-
-        locator.click()
-
+    @staticmethod
+    def _invalid_action(reason: str) -> ReplayActionResult:
         return ReplayActionResult(
-            success=True,
-            status=ReplayActionStatus.SUCCESS,
-            reason=(
-                f"Clicked {action.target.role} "
-                f"'{action.target.name}'."
-            ),
-        )
-
-    def _fill(
-        self,
-        action: CapabilityAction,
-    ) -> ReplayActionResult:
-
-        if action.value is None:
-            return ReplayActionResult(
-                success=False,
-                status=ReplayActionStatus.EXECUTION_ERROR,
-                reason="Fill action requires a value.",
-            )
-
-        locator, error = self._get_locator(action)
-
-        if error is not None:
-            return error
-
-        locator.fill(action.value)
-
-        return ReplayActionResult(
-            success=True,
-            status=ReplayActionStatus.SUCCESS,
-            reason=(
-                f"Filled {action.target.role} "
-                f"'{action.target.name}'."
-            ),
+            success=False,
+            status=ReplayActionStatus.INVALID_ACTION,
+            reason=reason,
+            action_may_have_executed=False,
         )

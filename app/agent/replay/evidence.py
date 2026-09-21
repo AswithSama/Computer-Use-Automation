@@ -20,6 +20,10 @@ FAILURE_SUMMARIES = {
     "output_extraction_error": "Output extraction raised an error.",
     "output_not_found": "An output binding returned zero matches.",
     "ambiguous_output": "An output binding returned multiple matches.",
+    "invalid_action": "The artifact contains an invalid or unsupported action.",
+    "business_outcome_detection_error": "Business-outcome evaluation raised an error.",
+    "intervention_limit_reached": "The configured intervention limit was reached.",
+    "handoff_error": "The human-intervention mechanism failed."
 }
 
 

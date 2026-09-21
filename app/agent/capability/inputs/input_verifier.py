@@ -4,7 +4,7 @@ from app.agent.capability.inputs.input_extraction import (
     InputCandidate,
     InputExtractionResult,
 )
-from app.agent.capability.models import CapabilityContext
+from app.agent.capability.context import CapabilityContext
 
 
 @dataclass

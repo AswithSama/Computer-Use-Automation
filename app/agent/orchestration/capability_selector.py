@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from app.agent.capability.registry import StoredCapability
+from app.agent.schemas.registry import StoredCapability
 
 
 EligibleCapability = tuple[Path, StoredCapability]

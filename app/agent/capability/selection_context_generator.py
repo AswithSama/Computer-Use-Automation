@@ -2,7 +2,7 @@ import json
 from collections.abc import Callable
 
 from app.agent.schemas.capability import CapabilityArtifact
-from app.agent.capability.registry import SelectionContext
+from app.agent.schemas.registry import SelectionContext
 
 
 class SelectionContextGenerator:

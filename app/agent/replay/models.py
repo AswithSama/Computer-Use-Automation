@@ -2,9 +2,9 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 class ReplayActionStatus(str, Enum):
     SUCCESS = "success"
+    INVALID_ACTION = "invalid_action"
     TARGET_NOT_FOUND = "target_not_found"
     TARGET_NOT_INTERACTABLE = "target_not_interactable"
     TIMEOUT = "timeout"
@@ -18,11 +18,16 @@ class ReplayActionResult(BaseModel):
     status: ReplayActionStatus
     reason: str
 
+    # False means the executor did not invoke click/fill.
+    # True means the action succeeded OR its effect may be uncertain.
+    # Default conservatively for callers that do not supply this field.
+    action_may_have_executed: bool = True
 
 class ReplayStatus(str, Enum):
     SUCCESS = "success"
     BUSINESS_OUTCOME = "business_outcome"
     RECOVERABLE_FAILURE = "recoverable_failure"
+    NEEDS_INTERVENTION = "needs_intervention"
     HARD_FAILURE = "hard_failure"
 
 
@@ -72,6 +77,16 @@ class ReplayResult(BaseModel):
     # References to redacted logs, screenshots, or snapshots.
     evidence_refs: list[str] = Field(default_factory=list)
     recovery_action: ReplayRecoveryAction | None = None
+
+    # True when replay continued after a verified human intervention.
+    human_assisted: bool = False
+
+    # Number of intervention attempts during this replay.
+    intervention_count: int = Field(default=0, ge=0)
+
+    # Describes the interrupted action, when applicable.
+    # None means this result does not establish its execution state.
+    action_may_have_executed: bool | None = None
 
     @property
     def success(self) -> bool:

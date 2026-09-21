@@ -1,45 +1,23 @@
 from collections.abc import Callable
 
-from app.agent.capability.registry import CapabilityRegistry
+from app.agent.registry.registry import CapabilityRegistry
 from app.agent.orchestration.capability_selector import CapabilitySelector
 
 
 class Orchestrator:
-    def __init__(
-        self,
-        *,
-        registry: CapabilityRegistry,
-        selector: CapabilitySelector,
-        run_discovery: Callable,
-        run_replay: Callable,
-    ):
+    def __init__(self,*,registry: CapabilityRegistry,selector: CapabilitySelector,run_discovery: Callable,run_replay: Callable,):
         self.registry = registry
         self.selector = selector
         self.run_discovery = run_discovery
         self.run_replay = run_replay
 
-    def run(
-        self,
-        *,
-        user_request: str,
-        tenant_id: str,
-        app_id: str,
-    ):
-        eligible = self.registry.list_eligible(
-            tenant_id=tenant_id,
-            app_id=app_id,
-        )
+    def run(self,*,user_request: str,tenant_id: str,app_id: str,):
 
-        selection = self.selector.select(
-            user_request=user_request,
-            eligible=eligible,
-        )
+        eligible = self.registry.list_eligible(tenant_id=tenant_id,app_id=app_id,)
+        selection = self.selector.select(user_request=user_request,eligible=eligible,)
 
         if selection is None:
-            print(
-                "[ORCHESTRATOR] No matching approved capability. "
-                "Starting discovery."
-            )
+            print("[ORCHESTRATOR] No matching approved capability. Starting discovery.")
             return self.run_discovery(user_request)
 
         (selected_path, stored), inputs = selection
@@ -53,8 +31,6 @@ class Orchestrator:
 
         return self.run_replay(
             artifact=stored.artifact,
-            business_outcome_rules=tuple(
-                stored.business_outcome_rules
-            ),
+            business_outcome_rules=tuple(stored.business_outcome_rules),
             inputs=inputs,
         )

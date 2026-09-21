@@ -27,17 +27,64 @@ from app.agent.schemas.recording import (
 )
 from app.agent.recording.state_fingerprint import build_state_fingerprint
 from app.agent.recording.trajectory_recorder import TrajectoryRecorder
+from uuid import uuid4
 
+from app.agent.handoff.decision import (
+    ConditionKind,
+    ConditionSource,
+    RecoveryDecisionContext,
+    decide_recovery,
+)
+from app.agent.handoff.manager import HumanHandoffManager
+from app.agent.handoff.models import (
+    ExecutionPhase,
+    InterventionRequest,
+)
 class DiscoveryAgent:
     def __init__(
         self,
         max_steps: int = 20,
         max_failures: int = 5,
         business_validation_policy: str = "",
+        *,
+        handoff_manager: HumanHandoffManager | None = None,
+        handoff_enabled: bool = True,
+        max_interventions: int = 2,
     ):
+        if max_interventions < 0:
+            raise ValueError("max_interventions must not be negative.")
+
         self.max_steps = max_steps
         self.max_failures = max_failures
         self.business_validation_policy = business_validation_policy
+
+        self.handoff_manager = handoff_manager
+        self.handoff_enabled = handoff_enabled
+        self.max_interventions = max_interventions
+
+    @staticmethod
+    def _origin(url):
+        parsed = urlparse(url)
+        port = parsed.port
+
+        if port is None:
+            port = {
+                "http": 80,
+                "https": 443,
+            }.get(parsed.scheme)
+
+        return parsed.scheme, parsed.hostname, port
+
+    def _session_usable(self, browser, target_url):
+        try:
+            return (
+                not browser.page.is_closed()
+                and self._origin(browser.page.url)
+                == self._origin(target_url)
+            )
+
+        except Exception:
+            return False
 
     def run(self, user_request: str, target_url: str):
         # -------------------------
@@ -74,6 +121,121 @@ class DiscoveryAgent:
 
         failure_count = 0
 
+        run_id = str(uuid4())
+        session_id = str(uuid4())
+
+        human_assisted = False
+        intervention_count = 0
+
+        intervention_evidence: list[str] = []
+        assisted_execution_trace: list[RecordedTransition] = []
+
+        def request_handoff(step: int, reason: str) -> bool:
+            nonlocal human_assisted, intervention_count
+
+            if (
+                self.handoff_manager is None
+                or intervention_count >= self.max_interventions
+                or step >= self.max_steps
+            ):
+                logger.log(
+                    "human_handoff_unavailable",
+                    step=step,
+                    reason=(
+                        "manager_unavailable_or_execution_budget_exhausted"
+                    ),
+                )
+                return False
+
+            decision = decide_recovery(
+                RecoveryDecisionContext(
+                    condition_kind=ConditionKind.FAILURE,
+                    source=ConditionSource.TARGET_APPLICATION,
+                    live_session_usable=self._session_usable(
+                        browser,
+                        target_url,
+                    ),
+                    human_intervention_allowed=self.handoff_enabled,
+                )
+            )
+
+            if not decision.requires_handoff:
+                logger.log(
+                    "human_handoff_denied",
+                    step=step,
+                    reason="session_or_policy_does_not_permit_handoff",
+                )
+                return False
+
+            request = InterventionRequest(
+                run_id=run_id,
+                phase=ExecutionPhase.DISCOVERY,
+                reason=reason,
+                browser_session_id=session_id,
+                current_step=step,
+            )
+
+            # Conservatively mark the run as assisted even when the
+            # operator reports only inspecting the application.
+            human_assisted = True
+            intervention_count += 1
+
+            try:
+                outcome = self.handoff_manager.request_intervention(
+                    request=request,
+                    decision=decision,
+                )
+
+                journal = (
+                    self.handoff_manager.evidence_dir
+                    / f"{request.intervention_id}.jsonl"
+                )
+                intervention_evidence.append(str(journal))
+
+                if not outcome.may_attempt_resume:
+                    return False
+
+                # Discovery resumes observation and reasoning—not execution
+                # of the action proposed before handoff.
+                verified = False
+
+                try:
+                    if self._session_usable(browser, target_url):
+                        fresh_observation = browser.observe()
+
+                        verified = (
+                            isinstance(fresh_observation, str)
+                            and bool(fresh_observation.strip())
+                            and self._session_usable(
+                                browser,
+                                target_url,
+                            )
+                        )
+
+                except Exception:
+                    verified = False
+
+                resumed = self.handoff_manager.complete_resume(
+                    intervention_id=request.intervention_id,
+                    state_verified=verified,
+                )
+
+            except Exception:
+                logger.log(
+                    "human_handoff_failed",
+                    step=step,
+                    reason="intervention_or_resume_verification_failed",
+                )
+                return False
+
+            logger.log(
+                "human_handoff_completed",
+                step=step,
+                resumed=resumed,
+                intervention_id=str(request.intervention_id),
+            )
+
+            return resumed
         # Stores successfully executed actions.
         # Also allows the validator to detect repeated actions.
         action_history = []
@@ -273,18 +435,19 @@ class DiscoveryAgent:
                         continue
 
                     # Validator LLM could not safely decide.
-                    if llm_validation.decision == ValidatorDecision.ESCALATE_TO_HUMAN:
-                        print("\nHuman assistance required:")
-                        print(llm_validation.reason)
+                    if (
+                        llm_validation.decision
+                        == ValidatorDecision.ESCALATE_TO_HUMAN
+                    ):
+                        if not request_handoff(
+                            step,
+                            "An action could not be validated safely. "
+                            "Inspect the application within the permitted "
+                            "workflow.",
+                        ):
+                            return None
 
-                        logger.log(
-                            "human_handoff_requested",
-                            step=step,
-                            source="validator_llm",
-                            reason=llm_validation.reason,
-                        )
-
-                        return None
+                        continue
 
                     # If APPROVE, execution continues below.
 
@@ -422,26 +585,18 @@ class DiscoveryAgent:
                         output_locations=output_locations,
                         execution_trace=(
                             trajectory_recorder.get_execution_trace()
+                            + assisted_execution_trace
                         ),
                         candidate_path=(
-                            trajectory_recorder.get_candidate_path()
+                            []
+                            if human_assisted
+                            else trajectory_recorder.get_candidate_path()
                         ),
                         final_state=final_state,
+                        human_assisted=human_assisted,
+                        intervention_count=intervention_count,
+                        evidence_refs=list(intervention_evidence),
                     )
-
-                    logger.log(
-                        "run_finished",
-                        step=step,
-                        result=action.result,
-                        execution_trace_length=len(
-                            discovery_result.execution_trace
-                        ),
-                        candidate_path_length=len(
-                            discovery_result.candidate_path
-                        ),
-                        final_url=final_state.url,
-                    )
-
                     return discovery_result
                 
                 # -------------------------
@@ -449,17 +604,14 @@ class DiscoveryAgent:
                 # -------------------------
 
                 if action.action == ActionType.REQUEST_HUMAN:
-                    print("\nHuman assistance requested:")
-                    print(action.reason)
+                    if not request_handoff(
+                        step,
+                        "The discovery agent requested human inspection "
+                        "because it could not safely proceed.",
+                    ):
+                        return None
 
-                    logger.log(
-                        "human_handoff_requested",
-                        step=step,
-                        source="browser_llm",
-                        reason=action.reason,
-                    )
-
-                    return None
+                    continue
 
                 # -------------------------
                 # EXECUTE ACTION
@@ -573,21 +725,38 @@ class DiscoveryAgent:
                         outcome_reason=outcome.reason,
                     )
 
-                    trajectory_recorder.record_transition(transition)
+                    # Never splice manual activity into an autonomous path.
+                    if human_assisted:
+                        assisted_execution_trace.append(transition)
+                    else:
+                        trajectory_recorder.record_transition(transition)
+
                     print("\nRecorded execution trace:")
-                    for recorded in trajectory_recorder.get_execution_trace():
+
+                    for recorded in (
+                        trajectory_recorder.get_execution_trace()
+                        + assisted_execution_trace
+                    ):
                         print(
                             f"Step {recorded.step}: "
                             f"{recorded.action.action.value}"
                         )
 
                     print("\nCurrent candidate path:")
-                    for recorded in trajectory_recorder.get_candidate_path():
-                        print(
-                            f"Step {recorded.step}: "
-                            f"{recorded.action.action.value}"
-                        )
 
+                    if human_assisted:
+                        print(
+                            "[DISCOVERY] Assisted run: no autonomous "
+                            "candidate path will be emitted."
+                        )
+                    else:
+                        for recorded in (
+                            trajectory_recorder.get_candidate_path()
+                        ):
+                            print(
+                                f"Step {recorded.step}: "
+                                f"{recorded.action.action.value}"
+                            )
                 # -------------------------
                 # EXECUTION FAILURE
                 # -------------------------

@@ -5,7 +5,7 @@ from openai import OpenAI
 from app.agent.capability.inputs.input_extraction import (
     InputExtractionResult,
 )
-from app.agent.capability.models import CapabilityContext
+from app.agent.capability.context import CapabilityContext
 
 
 class InputExtractorLLM:
