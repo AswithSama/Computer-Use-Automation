@@ -8,7 +8,8 @@ from app.agent.orchestration.replay_flow import ReplayFlow
 from app.agent.registry.registry import CapabilityRegistry
 from app.agent.handoff.manager import HumanHandoffManager
 from app.agent.handoff.operator import TerminalOperator
-
+from app.agent.policy.config import load_demo_banking_config
+from app.agent.policy.engine import PolicyEngine
 load_dotenv()
 
 
@@ -37,6 +38,8 @@ def main():
             operator_id="local-operator"
         )
     )
+    policy_engine = PolicyEngine(load_demo_banking_config())
+
     orchestrator = Orchestrator(
         registry=registry,
         selector=selector,
@@ -47,6 +50,7 @@ def main():
             registry=registry,
             ask_llm=ask_selection_llm,
             handoff_manager=handoff_manager,
+            policy_engine=policy_engine,
         ),
         run_replay = ReplayFlow(
         target_url=TARGET_URL,
@@ -54,6 +58,7 @@ def main():
             "get_savings_balance",
         }),
         handoff_manager=handoff_manager,
+        policy_engine=policy_engine,
     )
     )
 

@@ -23,8 +23,10 @@ FAILURE_SUMMARIES = {
     "invalid_action": "The artifact contains an invalid or unsupported action.",
     "business_outcome_detection_error": "Business-outcome evaluation raised an error.",
     "intervention_limit_reached": "The configured intervention limit was reached.",
-    "handoff_error": "The human-intervention mechanism failed."
-}
+    "handoff_error": "The human-intervention mechanism failed.",
+    "policy_blocked": "Replay was stopped because the current allowlist does not permit the requested operation.",
+    "policy_confirmation_required": "Replay was stopped because the operation requires explicit authorization.",
+    }
 
 
 class ReplayEvidenceRecorder:

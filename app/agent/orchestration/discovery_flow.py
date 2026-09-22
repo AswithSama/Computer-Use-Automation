@@ -1,7 +1,7 @@
 """Discovery phase: explore the app, compile a capability, save a draft."""
 
 from collections.abc import Callable
-
+from app.agent.policy.engine import PolicyEngine
 from app.agent.capability.checkpoint_detector import CheckpointDetector
 from app.agent.capability.compiler import CapabilityCompiler
 from app.agent.capability.context import CapabilityContextBuilder
@@ -16,6 +16,11 @@ from app.agent.registry.registry import CapabilityRegistry
 from app.agent.schemas.outcomes import BusinessOutcomeRule
 from app.agent.handoff.manager import HumanHandoffManager
 from app.agent.handoff.operator import TerminalOperator
+from app.agent.orchestration.path_optimization import (
+    minimize_discovery_result,
+)
+from app.agent.policy.engine import PolicyEngine
+from app.agent.schemas.discovery import ActionType
 
 class DiscoveryFlow:
     """
@@ -36,12 +41,14 @@ class DiscoveryFlow:
         handoff_manager: HumanHandoffManager | None = None,
         handoff_enabled: bool = True,
         max_interventions: int = 2,
+        policy_engine: PolicyEngine | None = None,
     ):
         self.target_url = target_url
         self.tenant_id = tenant_id
         self.app_id = app_id
         self.registry = registry
         self.ask_llm = ask_llm
+        self.policy_engine = policy_engine
 
         self.handoff_manager = (
             handoff_manager
@@ -73,6 +80,7 @@ class DiscoveryFlow:
             handoff_manager=self.handoff_manager,
             handoff_enabled=self.handoff_enabled,
             max_interventions=self.max_interventions,
+            policy_engine=self.policy_engine,  # Add this line.
         )
 
         result = agent.run(
@@ -126,6 +134,43 @@ class DiscoveryFlow:
                 "for savings-balance requests only. No draft was saved."
             )
             return result
+
+        # ---------------------------------------------------------
+        # Minimize same-page exploration only for an autonomous,
+        # authorized, read-only savings discovery.
+        # ---------------------------------------------------------
+
+        if self.policy_engine is not None:
+            original_path_length = len(result.candidate_path)
+
+            result = minimize_discovery_result(
+                result,
+                policy_engine=self.policy_engine,
+                required_action_sequence=(
+                    ActionType.CLICK,
+                    ActionType.FILL,
+                    ActionType.CLICK,
+                    ActionType.CLICK,
+                ),
+            )
+
+            minimized_path_length = len(result.candidate_path)
+
+            if minimized_path_length < original_path_length:
+                print(
+                    "\n[DISCOVERY] Verified path minimization: "
+                    f"{original_path_length} -> "
+                    f"{minimized_path_length} actions."
+                )
+            else:
+                print(
+                    "\n[DISCOVERY] Original candidate path retained."
+                )
+        else:
+            print(
+                "\n[DISCOVERY] Path minimization skipped: "
+                "no shared policy engine was supplied."
+            )
 
         # ---------------------------------------------------------
         # Build capability context.

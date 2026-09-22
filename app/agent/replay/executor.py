@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from app.agent.schemas.capability import CapabilityAction
@@ -16,65 +18,111 @@ class ReplayActionExecutor:
         self,
         action: CapabilityAction,
     ) -> ReplayActionResult:
+
         action_may_have_executed = False
 
         try:
+            # -------------------------------------------------
+            # Supported deterministic replay actions.
+            # -------------------------------------------------
+
             if action.action not in {
                 ActionType.CLICK,
                 ActionType.FILL,
+                ActionType.NAVIGATE,
+                ActionType.WAIT,
             }:
                 return self._invalid_action(
                     "The artifact contains an unsupported replay action."
                 )
 
-            if action.target is None:
-                return self._invalid_action(
-                    "The artifact action is missing its target definition."
+            # -------------------------------------------------
+            # CLICK / FILL
+            # -------------------------------------------------
+
+            if action.action in {
+                ActionType.CLICK,
+                ActionType.FILL,
+            }:
+                if action.target is None:
+                    return self._invalid_action(
+                        "The artifact action is missing its target definition."
+                    )
+
+                if (
+                    not action.target.role.strip()
+                    or not action.target.name.strip()
+                ):
+                    return self._invalid_action(
+                        "The artifact target requires a nonempty role and name."
+                    )
+
+                if (
+                    action.action == ActionType.FILL
+                    and action.value is None
+                ):
+                    return self._invalid_action(
+                        "The artifact fill action is missing its value."
+                    )
+
+                locator = self.page.get_by_role(
+                    action.target.role,
+                    name=action.target.name,
+                    exact=False,
                 )
 
-            if (
-                not action.target.role.strip()
-                or not action.target.name.strip()
-            ):
-                return self._invalid_action(
-                    "The artifact target requires a nonempty role and name."
+                count = locator.count()
+
+                if count != 1:
+                    return ReplayActionResult(
+                        success=False,
+                        status=ReplayActionStatus.TARGET_NOT_FOUND,
+                        reason=(
+                            "The target is missing or matches multiple elements."
+                        ),
+                        action_may_have_executed=False,
+                    )
+
+                # Once Playwright receives the interaction,
+                # an exception cannot prove that no effect occurred.
+                action_may_have_executed = True
+
+                if action.action == ActionType.CLICK:
+                    locator.click()
+
+                else:
+                    locator.fill(action.value)
+
+            # -------------------------------------------------
+            # NAVIGATE
+            # -------------------------------------------------
+
+            elif action.action == ActionType.NAVIGATE:
+                if not action.url:
+                    return self._invalid_action(
+                        "The artifact navigation action is missing its URL."
+                    )
+
+                destination = urljoin(
+                    self.page.url,
+                    action.url,
                 )
 
-            if (
-                action.action == ActionType.FILL
-                and action.value is None
-            ):
-                return self._invalid_action(
-                    "The artifact fill action is missing its value."
+                action_may_have_executed = True
+
+                self.page.goto(
+                    destination,
+                    wait_until="domcontentloaded",
                 )
 
-            # Preserve the current matching behavior.
-            locator = self.page.get_by_role(
-                action.target.role,
-                name=action.target.name,
-                exact=False,
-            )
+            # -------------------------------------------------
+            # WAIT
+            # -------------------------------------------------
 
-            count = locator.count()
+            elif action.action == ActionType.WAIT:
+                action_may_have_executed = True
 
-            if count != 1:
-                return ReplayActionResult(
-                    success=False,
-                    status=ReplayActionStatus.TARGET_NOT_FOUND,
-                    reason=(
-                        "The target is missing or matches multiple elements."
-                    ),
-                    action_may_have_executed=False,
-                )
-
-            # Once click/fill is invoked, an exception does not establish
-            # whether the action took effect.
-            action_may_have_executed = True
-
-            if action.action == ActionType.CLICK:
-                locator.click()
-            else:
-                locator.fill(action.value)
+                self.page.wait_for_timeout(1000)
 
             return ReplayActionResult(
                 success=True,

@@ -9,6 +9,7 @@ from app.agent.handoff.decision import RecoveryDecision
 from app.agent.handoff.models import (
     ControlOwner,
     HandoffState,
+    IncidentClassification,
     InterventionOutcome,
     InterventionRequest,
     InterventionResolution,
@@ -83,6 +84,19 @@ class HumanHandoffManager:
             if outcome.intervention_id != request.intervention_id:
                 raise ValueError(
                     "Operator response belongs to another intervention."
+                )
+
+            # Enforce this in the manager as well as the terminal operator.
+            # A different operator implementation must not bypass the rule.
+            if (
+                outcome.incident_classification
+                == IncidentClassification.HARD_FAILURE
+                and outcome.resolution == InterventionResolution.RESOLVED
+            ):
+                outcome = outcome.model_copy(
+                    update={
+                        "resolution": InterventionResolution.UNRESOLVED,
+                    }
                 )
 
             self._state.operator_id = outcome.operator_id
@@ -185,12 +199,25 @@ class HumanHandoffManager:
             "control_owner": self._state.control_owner.value,
         }
 
+        # Only attach a reference to a screenshot, never image bytes.
+        # The actual capture will be connected in Step 3.
+        if request.screenshot_ref is not None:
+            record["screenshot_ref"] = request.screenshot_ref
+
         if outcome is not None:
             record["resolution"] = outcome.resolution.value
 
-            # Persist only a recognized, controlled description.
             if outcome.action_summary in ACTION_SUMMARIES.values():
                 record["operator_reported_action"] = outcome.action_summary
+
+            if outcome.incident_classification is not None:
+                record["incident_classification"] = (
+                    outcome.incident_classification.value
+                )
+
+                # This is an operator-reported classification.
+                # It must be reviewed before changing a capability.
+                record["review_status"] = "pending_review"
 
         self.evidence_dir.mkdir(
             parents=True,

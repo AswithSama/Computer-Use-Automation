@@ -3,6 +3,7 @@
 from typing import Protocol
 
 from app.agent.handoff.models import (
+    IncidentClassification,
     InterventionOutcome,
     InterventionRequest,
     InterventionResolution,
@@ -16,6 +17,14 @@ ACTION_SUMMARIES = {
     "2": "Dismissed a blocking dialog.",
     "3": "Restored the expected application screen.",
     "4": "Completed an authorized manual application step.",
+}
+
+
+INCIDENT_CLASSIFICATIONS = {
+    "1": IncidentClassification.BUSINESS_OUTCOME,
+    "2": IncidentClassification.RECOVERABLE_CONDITION,
+    "3": IncidentClassification.HARD_FAILURE,
+    "4": IncidentClassification.NEEDS_REVIEW,
 }
 
 
@@ -41,8 +50,19 @@ class TerminalOperator:
     ) -> InterventionOutcome:
         print("\n========== HUMAN INTERVENTION ==========")
         print(f"Phase: {request.phase.value}")
-        print(f"Step: {request.current_step or 'Not associated with a step'}")
+        print(
+            f"Step: "
+            f"{request.current_step or 'Not associated with a step'}"
+        )
         print(f"Reason: {request.reason}")
+
+        if request.screenshot_ref:
+            print("\nScreenshot captured for this intervention:")
+            print(request.screenshot_ref)
+        else:
+            print(
+                "\nNo screenshot is attached to this intervention."
+            )
 
         print(
             "\nAutomation is waiting. Use the existing browser window."
@@ -84,16 +104,41 @@ class TerminalOperator:
                         InterventionResolution.CANCELLED,
                     )
 
+                classification = self._collect_classification()
+
+                if classification is None:
+                    return self._outcome(
+                        request,
+                        InterventionResolution.CANCELLED,
+                        action_summary=summary,
+                    )
+
                 resolution = (
                     InterventionResolution.RESOLVED
                     if choice == "d"
                     else InterventionResolution.UNRESOLVED
                 )
 
+                if (
+                    classification
+                    == IncidentClassification.HARD_FAILURE
+                    and resolution == InterventionResolution.RESOLVED
+                ):
+                    print(
+                        "\nYou classified this incident as a hard failure."
+                        "\nAutomation cannot resume this run under "
+                        "that classification."
+                        "\nThe current intervention will be recorded "
+                        "as unresolved."
+                    )
+
+                    resolution = InterventionResolution.UNRESOLVED
+
                 return self._outcome(
                     request,
                     resolution,
                     action_summary=summary,
+                    incident_classification=classification,
                 )
 
         except (EOFError, KeyboardInterrupt):
@@ -123,16 +168,51 @@ class TerminalOperator:
 
             print("Select one of the listed choices.")
 
+    def _collect_classification(
+        self,
+    ) -> IncidentClassification | None:
+        print("\nHow would you classify the incident?")
+
+        print("1. Business outcome")
+        print("   The application returned a legitimate business result.")
+
+        print("2. Recoverable condition")
+        print("   A known procedure might resolve this automatically")
+        print("   in a future capability version.")
+
+        print("3. Hard failure")
+        print("   Automation should stop for this condition.")
+
+        print("4. Needs review")
+        print("   The appropriate classification is uncertain.")
+
+        print("c. Cancel intervention")
+
+        while True:
+            choice = input(
+                "\nClassification: "
+            ).strip().lower()
+
+            if choice == "c":
+                return None
+
+            if choice in INCIDENT_CLASSIFICATIONS:
+                return INCIDENT_CLASSIFICATIONS[choice]
+
+            print("Select one of the listed choices.")
+
     def _outcome(
         self,
         request: InterventionRequest,
         resolution: InterventionResolution,
         *,
         action_summary: str | None = None,
+        incident_classification: IncidentClassification | None = None,
     ) -> InterventionOutcome:
         return InterventionOutcome(
             intervention_id=request.intervention_id,
             resolution=resolution,
             operator_id=self.operator_id,
             action_summary=action_summary,
+            incident_classification=incident_classification,
         )

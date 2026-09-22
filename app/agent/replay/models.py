@@ -40,6 +40,7 @@ class ReplayFailureCategory(str, Enum):
     CHECKPOINT = "checkpoint"
     OUTPUT = "output"
     UNKNOWN = "unknown"
+    POLICY = "policy"
 
 class ReplayRecoveryAction(str, Enum):
     REQUEST_INPUT = "request_input"

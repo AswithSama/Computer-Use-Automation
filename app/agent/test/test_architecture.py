@@ -35,16 +35,19 @@ ALLOWED = {
     "validation": {"schemas"},
     "capability": {"schemas"},
     "registry": {"schemas"},
-    "replay": {"schemas"},
-    "discovery": {"llm", "observability", "recording", "schemas", "validation", "handoff"},
+    "replay": {"schemas","policy"},
+    "discovery": {"llm", "policy","observability", "recording", "schemas", "validation", "handoff"},
     "orchestration": {
         "capability",
         "discovery",
         "handoff",
+        "policy",
         "registry",
         "replay",
         "schemas",
+        "recording"
     },
+    "policy": {"schemas"},
 }
 
 

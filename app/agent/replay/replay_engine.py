@@ -17,6 +17,8 @@ from app.agent.replay.parameter_resolver import (
     ParameterResolutionError,
     ParameterResolver,
 )
+from app.agent.policy.engine import PolicyEngine
+from app.agent.policy.models import PolicyDecision
 
 
 class ReplayEngine:
@@ -30,6 +32,8 @@ class ReplayEngine:
         ] | None = None,
         checkpoint_resume_allowed: bool = False,
         max_interventions: int = 2,
+        policy_engine: PolicyEngine | None = None,
+        policy_profile_id: str | None = None,
     ):
         if max_interventions < 0:
             raise ValueError("max_interventions must not be negative.")
@@ -49,6 +53,8 @@ class ReplayEngine:
         self._intervention_count = 0
         self._human_assisted = False
         self._intervention_evidence: list[str] = []
+        self.policy_engine = policy_engine
+        self.policy_profile_id = policy_profile_id
 
     def _record_failure(self, result, phase):
         try:
@@ -212,6 +218,94 @@ class ReplayEngine:
             )
 
         return verify
+    def _policy_failure(
+        self,
+        *,
+        result,
+        completed_steps: int,
+        failed_step: int | None,
+        action_may_have_executed: bool = False,
+    ):
+        if result.decision == PolicyDecision.NEEDS_CONFIRMATION:
+            error_code = "policy_confirmation_required"
+        else:
+            error_code = "policy_blocked"
+
+        return self._record_failure(
+            ReplayResult(
+                status=ReplayStatus.HARD_FAILURE,
+                failure_category=ReplayFailureCategory.POLICY,
+                reason="Replay stopped by the current execution policy.",
+                error_code=error_code,
+                completed_steps=completed_steps,
+                failed_step=failed_step,
+                action_may_have_executed=action_may_have_executed,
+            ),
+            phase="policy",
+        )
+
+
+    def _check_policy_scope(
+        self,
+        *,
+        completed_steps: int,
+        failed_step: int | None,
+        action_may_have_executed: bool = False,
+    ):
+        if self.policy_engine is None:
+            return None
+
+        result = self.policy_engine.check_scope(
+            current_url=self.page.url,
+            profile_id=self.policy_profile_id,
+        )
+
+        if result.decision == PolicyDecision.ALLOWED:
+            return None
+
+        return self._policy_failure(
+            result=result,
+            completed_steps=completed_steps,
+            failed_step=failed_step,
+            action_may_have_executed=action_may_have_executed,
+        )
+
+
+    def _check_action_policy(
+        self,
+        *,
+        action,
+        completed_steps: int,
+        failed_step: int,
+    ):
+        if self.policy_engine is None:
+            return None
+
+        target_role = None
+        target_name = None
+
+        if action.target is not None:
+            target_role = action.target.role
+            target_name = action.target.name
+
+        result = self.policy_engine.check(
+            action=action.action,
+            current_url=self.page.url,
+            profile_id=self.policy_profile_id,
+            target_role=target_role,
+            target_name=target_name,
+            destination_url=action.url,
+        )
+
+        if result.decision == PolicyDecision.ALLOWED:
+            return None
+
+        return self._policy_failure(
+            result=result,
+            completed_steps=completed_steps,
+            failed_step=failed_step,
+            action_may_have_executed=False,
+        )
 
     def _run(self, artifact, inputs):
         completed_steps = 0
@@ -253,6 +347,14 @@ class ReplayEngine:
                 checkpoint.after_action, []
             ).append(checkpoint)
 
+        initial_policy_failure = self._check_policy_scope(
+            completed_steps=completed_steps,
+            failed_step=None,
+        )
+
+        if initial_policy_failure is not None:
+            return initial_policy_failure
+        
         for step, action in enumerate(artifact.actions, start=1):
             print(f"[REPLAY] Step {step}: {action.action.value}")
 
@@ -275,6 +377,15 @@ class ReplayEngine:
                     phase="parameters",
                 )
 
+            policy_failure = self._check_action_policy(
+                action=resolved_action,
+                completed_steps=completed_steps,
+                failed_step=step,
+            )
+
+            if policy_failure is not None:
+                return policy_failure
+            
             try:
                 action_result = self.executor.execute(
                     resolved_action
@@ -353,7 +464,15 @@ class ReplayEngine:
                     return self._offer_handoff(failure)
 
                 return failure
+            post_action_policy_failure = self._check_policy_scope(
+                completed_steps=completed_steps,
+                failed_step=step,
+                action_may_have_executed=True,
+            )
 
+            if post_action_policy_failure is not None:
+                return post_action_policy_failure
+            
             # Expected business outcomes take precedence over checkpoints.
             outcome = self._business_outcome(
                 step,

@@ -1,7 +1,7 @@
 import json
 from unittest.mock import Mock
 from uuid import uuid4
-
+from pathlib import Path
 import pytest
 
 from types import SimpleNamespace
@@ -34,6 +34,7 @@ from app.agent.handoff.models import (
     InterventionRequest,
     InterventionResolution,
     InterventionStatus,
+    IncidentClassification
 )
 from app.agent.handoff.operator import (
     ACTION_SUMMARIES,
@@ -409,6 +410,16 @@ def test_manager_records_lifecycle_and_declared_action(tmp_path):
         request,
         InterventionResolution.RESOLVED,
     )
+    request.screenshot_ref = str(tmp_path / "screenshots" / f"{request.intervention_id}.png")
+
+    operator = manager.operator
+    operator.handle.return_value = InterventionOutcome(
+        intervention_id=request.intervention_id,
+        resolution=InterventionResolution.RESOLVED,
+        operator_id="test-operator",
+        action_summary=ACTION_SUMMARIES["2"],
+        incident_classification=IncidentClassification.RECOVERABLE_CONDITION,
+    )
 
     _request_handoff(manager, request)
 
@@ -434,6 +445,11 @@ def test_manager_records_lifecycle_and_declared_action(tmp_path):
     assert records[2]["status"] == "resuming"
     assert records[2]["operator_reported_action"] == ACTION_SUMMARIES["2"]
     assert records[3]["status"] == "resolved"
+    assert records[0]["screenshot_ref"] == request.screenshot_ref
+
+    assert records[2]["incident_classification"]== "recoverable_condition"
+
+    assert records[2]["review_status"] == "pending_review"
 
 
 def test_evidence_excludes_unrestricted_context_and_comments(tmp_path):
@@ -522,7 +538,7 @@ def test_terminal_operator_collects_declared_action(
     request = _make_request()
     operator = TerminalOperator(operator_id="test-operator")
 
-    answers = iter([choice, "2"])
+    answers = iter([choice, "2", "2"])
     monkeypatch.setattr(
         "builtins.input",
         lambda prompt: next(answers),
@@ -534,6 +550,7 @@ def test_terminal_operator_collects_declared_action(
     assert outcome.resolution == expected_resolution
     assert outcome.operator_id == "test-operator"
     assert outcome.action_summary == ACTION_SUMMARIES["2"]
+    assert outcome.incident_classification == IncidentClassification.RECOVERABLE_CONDITION
 
 
 @pytest.mark.parametrize(
@@ -575,7 +592,14 @@ def test_terminal_interruption_cancels_handoff(monkeypatch, error_type):
 def test_terminal_operator_reprompts_for_invalid_choices(monkeypatch):
     operator = TerminalOperator(operator_id="test-operator")
 
-    answers = iter(["invalid", "d", "invalid", "2"])
+    answers = iter([
+    "invalid",  # Invalid resolution
+    "d",        # Resolved
+    "invalid",  # Invalid action summary
+    "2",        # Dismissed a blocking dialog
+    "invalid",  # Invalid incident classification
+    "2",        # Recoverable condition
+    ])
     monkeypatch.setattr(
         "builtins.input",
         lambda prompt: next(answers),
@@ -585,6 +609,7 @@ def test_terminal_operator_reprompts_for_invalid_choices(monkeypatch):
 
     assert outcome.resolution == InterventionResolution.RESOLVED
     assert outcome.action_summary == ACTION_SUMMARIES["2"]
+    assert outcome.incident_classification== IncidentClassification.RECOVERABLE_CONDITION
 
 
 def test_terminal_operator_requires_nonempty_operator_id():
@@ -652,6 +677,29 @@ def replay_handoff_case(tmp_path, monkeypatch):
 
     browser = Mock()
     browser.page = page
+    def capture_handoff_screenshot(*, evidence_dir, intervention_id):
+        # Screenshot must be captured while the original browser
+        # is still open, before control passes to the operator.
+        assert page.is_closed() is False
+
+        screenshot_dir = Path(evidence_dir) / "screenshots"
+        screenshot_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        screenshot_path = screenshot_dir / f"{intervention_id}.png"
+
+        screenshot_path.write_bytes(
+            b"synthetic-screenshot-data"
+        )
+
+        return str(screenshot_path)
+
+
+    browser.capture_handoff_screenshot.side_effect = (
+        capture_handoff_screenshot
+    )
 
     def open_browser(url):
         page.url = url
@@ -833,6 +881,11 @@ def test_replay_handoff_preserves_browser_and_does_not_repeat_action(
 
     assert journal.is_file()
     assert str(journal) in result.evidence_refs
+    assert case.browser.capture_handoff_screenshot.call_count == 1
+
+    assert case.manager.state.request.screenshot_ref in (
+        result.evidence_refs
+    )
 
     records = [
         json.loads(line)
@@ -1017,3 +1070,36 @@ def test_replay_operator_exception_stops_and_closes_browser(
     assert case.manager.state.status == InterventionStatus.CANCELLED
     assert case.manager.state.control_owner == ControlOwner.AUTOMATION
     case.browser.close.assert_called_once()
+
+
+def test_terminal_operator_hard_failure_cannot_resume(
+    monkeypatch,
+):
+    operator = TerminalOperator(
+        operator_id="test-operator",
+    )
+
+    answers = iter([
+        "d",  # Operator initially reports intervention resolved
+        "1",  # Inspected the application
+        "3",  # Classifies the incident as a hard failure
+    ])
+
+    monkeypatch.setattr(
+        "builtins.input",
+        lambda prompt: next(answers),
+    )
+
+    outcome = operator.handle(_make_request())
+
+    assert (
+        outcome.incident_classification
+        == IncidentClassification.HARD_FAILURE
+    )
+
+    assert (
+        outcome.resolution
+        == InterventionResolution.UNRESOLVED
+    )
+
+    assert outcome.may_attempt_resume is False

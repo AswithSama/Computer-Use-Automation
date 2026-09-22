@@ -31,6 +31,15 @@ class InterventionStatus(str, Enum):
     TIMED_OUT = "timed_out"
 
 
+class IncidentClassification(str, Enum):
+    """Operator-reported incident type, pending maintainer review."""
+
+    BUSINESS_OUTCOME = "business_outcome"
+    RECOVERABLE_CONDITION = "recoverable_condition"
+    HARD_FAILURE = "hard_failure"
+    NEEDS_REVIEW = "needs_review"
+
+
 class InterventionResolution(str, Enum):
     RESOLVED = "resolved"
     UNRESOLVED = "unresolved"
@@ -46,7 +55,7 @@ class InterventionRequest(BaseModel):
     """Context needed to route one intervention to an operator."""
 
     model_config = ConfigDict(extra="forbid")
-
+    screenshot_ref: str | None = None
     intervention_id: UUID = Field(default_factory=uuid4)
     run_id: str = Field(min_length=1)
     phase: ExecutionPhase
@@ -81,6 +90,7 @@ class InterventionOutcome(BaseModel):
     resolution: InterventionResolution
     operator_id: str | None = None
     action_summary: str | None = None
+    incident_classification: IncidentClassification | None = None
     evidence_refs: list[str] = Field(default_factory=list)
     completed_at: datetime = Field(default_factory=_utc_now)
 

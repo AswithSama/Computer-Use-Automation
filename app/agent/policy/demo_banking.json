@@ -1,0 +1,54 @@
+{
+  "policy_id": "demo_banking_app",
+  "allowed_origins": [
+    "http://127.0.0.1:8000"
+  ],
+  "allowed_routes": [
+    "/",
+    "/members",
+    "/members/*",
+    "/accounts"
+  ],
+  "blocked_routes": [
+    "/operations",
+    "/operations/*"
+  ],
+  "allowed_actions": [
+    "click",
+    "fill",
+    "navigate",
+    "wait"
+  ],
+  "blocked_actions": [
+    "go_back"
+  ],
+  "blocked_targets": [],
+  "confirmation_targets": [],
+  "profiles": {
+    "read_only_discovery": {
+      "allowed_routes": [
+        "/",
+        "/members",
+        "/members/*",
+        "/accounts"
+      ],
+      "allowed_actions": [
+        "click",
+        "fill",
+        "navigate",
+        "wait"
+      ]
+    },
+    "get_savings_balance": {
+      "allowed_routes": [
+        "/",
+        "/members",
+        "/members/*"
+      ],
+      "allowed_actions": [
+        "click",
+        "fill"
+      ]
+    }
+  }
+}

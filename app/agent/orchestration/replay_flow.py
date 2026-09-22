@@ -3,7 +3,7 @@
 import os
 from urllib.parse import urlparse
 from uuid import uuid4
-
+from app.agent.policy.engine import PolicyEngine
 from app.agent.discovery.browser import BrowserSession
 from app.agent.handoff.decision import (
     ConditionKind,
@@ -33,10 +33,11 @@ class ReplayFlow:
         handoff_enabled: bool = True,
         checkpoint_resume_capability_ids: frozenset[str] = frozenset(),
         max_interventions: int = 2,
+        policy_engine: PolicyEngine | None = None,
     ):
         self.target_url = target_url
         self.handoff_enabled = handoff_enabled
-
+        self.policy_engine = policy_engine
         self.checkpoint_resume_capability_ids = frozenset(
             checkpoint_resume_capability_ids
         )
@@ -277,8 +278,26 @@ class ReplayFlow:
                         "stop after intervention. Automatic continuation "
                         "is not available for this condition."
                     )
+                # Show the handoff demo condition, when the demo is active.
+                activate_demo()
 
+                intervention_id = uuid4()
+
+                try:
+                    screenshot_ref = browser.capture_handoff_screenshot(
+                        evidence_dir=self.handoff_manager.evidence_dir,
+                        intervention_id=intervention_id,
+                    )
+
+                except Exception:
+                    print(
+                        "[REPLAY] Handoff screenshot capture failed. "
+                        "The intervention cannot proceed."
+                    )
+                    return False
+                
                 request = InterventionRequest(
+                    intervention_id=intervention_id,
                     run_id=run_id,
                     phase=ExecutionPhase.REPLAY,
                     reason=result.reason,
@@ -286,6 +305,7 @@ class ReplayFlow:
                     current_step=result.failed_step,
                     capability_id=artifact.capability_id,
                     evidence_refs=list(result.evidence_refs),
+                    screenshot_ref=screenshot_ref,
                 )
 
                 # Enable the demo button only when automation is handing
@@ -303,6 +323,7 @@ class ReplayFlow:
                 )
 
                 result.evidence_refs.append(str(journal))
+                result.evidence_refs.append(screenshot_ref)
 
                 if not outcome.may_attempt_resume:
                     return False
@@ -339,6 +360,8 @@ class ReplayFlow:
                     in self.checkpoint_resume_capability_ids
                 ),
                 max_interventions=self.max_interventions,
+                policy_engine=self.policy_engine,
+                policy_profile_id=artifact.capability_id,
             )
 
             if os.getenv("HANDOFF_DEMO") == "1":

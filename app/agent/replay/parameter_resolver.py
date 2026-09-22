@@ -12,7 +12,7 @@ class ParameterResolutionError(ValueError):
 class ParameterResolver:
 
     PARAMETER_PATTERN = re.compile(
-        r"^\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}$"
+        r"\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}"
     )
 
     def resolve_action(
@@ -21,18 +21,24 @@ class ParameterResolver:
         inputs: dict[str, str],
     ) -> CapabilityAction:
 
-        resolved_value = self._resolve_value(
+        resolved_value = self._resolve_text(
             action.value,
+            inputs,
+        )
+
+        resolved_url = self._resolve_text(
+            action.url,
             inputs,
         )
 
         return action.model_copy(
             update={
                 "value": resolved_value,
+                "url": resolved_url,
             }
         )
 
-    def _resolve_value(
+    def _resolve_text(
         self,
         value: str | None,
         inputs: dict[str, str],
@@ -41,17 +47,18 @@ class ParameterResolver:
         if value is None:
             return None
 
-        match = self.PARAMETER_PATTERN.fullmatch(value)
+        def replace(match: re.Match) -> str:
+            parameter_name = match.group(1)
 
-        if match is None:
-            return value
+            if parameter_name not in inputs:
+                raise ParameterResolutionError(
+                    f"Missing required replay input: "
+                    f"'{parameter_name}'."
+                )
 
-        parameter_name = match.group(1)
+            return inputs[parameter_name]
 
-        if parameter_name not in inputs:
-            raise ParameterResolutionError(
-                f"Missing required replay input: "
-                f"'{parameter_name}'."
-            )
-
-        return inputs[parameter_name]
+        return self.PARAMETER_PATTERN.sub(
+            replace,
+            value,
+        )

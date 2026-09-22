@@ -1,12 +1,30 @@
 from urllib.parse import urljoin, urlparse
 
 from app.agent.schemas.discovery import ActionType, BrowserAction
+from collections.abc import Callable
 
+from app.agent.policy.engine import PolicyEngine
+from app.agent.policy.models import (
+    PolicyDecision,
+    PolicyResult,
+    PolicyViolation,
+)
 
 class ActionExecutor:
-    def __init__(self, page, allowed_host: str):
+    def __init__(
+        self,
+        page,
+        allowed_host: str,
+        *,
+        policy_engine: PolicyEngine | None = None,
+        policy_profile_id: str = "read_only_discovery",
+        on_policy_decision: Callable[[PolicyResult], None] | None = None,
+    ):
         self.page = page
         self.allowed_host = allowed_host
+        self.policy_engine = policy_engine
+        self.policy_profile_id = policy_profile_id
+        self.on_policy_decision = on_policy_decision
 
     def execute(self, action: BrowserAction):
         if action.action == ActionType.CLICK:
@@ -64,11 +82,41 @@ class ActionExecutor:
     def _click(self, action: BrowserAction):
         locator = self._get_locator(action)
 
+        if self.policy_engine is not None:
+            href = locator.get_attribute("href")
+
+            if href is None:
+                # A link without an inspectable destination cannot be
+                # authorized for navigation.
+                if (action.target_role or "").strip().casefold() == "link":
+                    result = PolicyResult(
+                        decision=PolicyDecision.BLOCKED,
+                        code="link_destination_unverified",
+                        reason="The link destination could not be verified.",
+                    )
+
+                    if self.on_policy_decision is not None:
+                        self.on_policy_decision(result)
+
+                    raise PolicyViolation(result)
+
+            else:
+                destination = urljoin(self.page.url, href)
+
+                result = self.policy_engine.check_scope(
+                    current_url=destination,
+                    profile_id=self.policy_profile_id,
+                )
+
+                if self.on_policy_decision is not None:
+                    self.on_policy_decision(result)
+
+                if result.decision != PolicyDecision.ALLOWED:
+                    raise PolicyViolation(result)
+
         locator.click()
 
-        self.page.wait_for_load_state(
-            "domcontentloaded"
-        )
+        self.page.wait_for_load_state("domcontentloaded")
 
     def _fill(self, action: BrowserAction):
         if action.value is None:
@@ -91,12 +139,28 @@ class ActionExecutor:
             action.url,
         )
 
+        # Apply the shared policy immediately before page.goto().
+        if self.policy_engine is not None:
+            result = self.policy_engine.check_scope(
+                current_url=destination,
+                profile_id=self.policy_profile_id,
+            )
+
+            if self.on_policy_decision is not None:
+                self.on_policy_decision(result)
+
+            if result.decision != PolicyDecision.ALLOWED:
+                raise PolicyViolation(result)
+
+        # Retain the existing hostname restriction while integrating
+        # the shared policy. Existing callers without a policy engine
+        # continue to receive the original behavior.
         parsed = urlparse(destination)
 
         if parsed.hostname != self.allowed_host:
             raise ValueError(
                 f"Navigation blocked: {parsed.hostname} "
-                f"is not an allowed host."
+                "is not an allowed host."
             )
 
         self.page.goto(

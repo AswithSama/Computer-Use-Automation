@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 
+from app.agent.schemas.discovery import ActionType
 from app.agent.schemas.capability import (
     CapabilityAction,
     CapabilityArtifact,
@@ -24,6 +25,15 @@ from app.agent.schemas.recording import (
 
 
 class CapabilityCompiler:
+
+    # Only actions that deterministic replay currently intends
+    # to support may be compiled into a reusable capability.
+    REPLAYABLE_ACTIONS = frozenset({
+        ActionType.CLICK,
+        ActionType.FILL,
+        ActionType.NAVIGATE,
+        ActionType.WAIT,
+    })
 
     def compile(
         self,
@@ -95,14 +105,50 @@ class CapabilityCompiler:
 
         for interaction in context.interactions:
 
+            # Do not create a reusable capability containing an action
+            # that deterministic replay does not support.
+            if interaction.action not in self.REPLAYABLE_ACTIONS:
+                raise ValueError(
+                    f"Discovery action '{interaction.action.value}' "
+                    "cannot be compiled into deterministic replay."
+                )
+
             input_candidate = input_by_step.get(
                 interaction.step
             )
+
+            # -----------------------------------------------------
+            # Parameterize action value.
+            # -----------------------------------------------------
 
             value = interaction.value
 
             if input_candidate is not None:
                 value = f"{{{{{input_candidate.name}}}}}"
+
+            # -----------------------------------------------------
+            # Parameterize navigation URL.
+            #
+            # Example:
+            # /members/12345
+            #
+            # becomes:
+            # /members/{{member_id}}
+            # -----------------------------------------------------
+
+            url = interaction.url
+
+            if url is not None:
+                for candidate in extracted_inputs.inputs:
+                    if candidate.observed_value:
+                        url = url.replace(
+                            candidate.observed_value,
+                            f"{{{{{candidate.name}}}}}",
+                        )
+
+            # -----------------------------------------------------
+            # Compile semantic target.
+            # -----------------------------------------------------
 
             target = None
 
@@ -120,7 +166,7 @@ class CapabilityCompiler:
                     action=interaction.action,
                     target=target,
                     value=value,
-                    url=interaction.url,
+                    url=url,
                 )
             )
 
@@ -185,10 +231,11 @@ class CapabilityCompiler:
 
             # Parameterize discovery-specific input values.
             for input_candidate in extracted_inputs.inputs:
-                url_pattern = url_pattern.replace(
-                    input_candidate.observed_value,
-                    f"{{{{{input_candidate.name}}}}}",
-                )
+                if input_candidate.observed_value:
+                    url_pattern = url_pattern.replace(
+                        input_candidate.observed_value,
+                        f"{{{{{input_candidate.name}}}}}",
+                    )
 
             checkpoints.append(
                 CapabilityCheckpoint(
@@ -199,6 +246,7 @@ class CapabilityCompiler:
             )
 
         return checkpoints
+
     def compile_outputs(
         self,
         context: CapabilityContext,
