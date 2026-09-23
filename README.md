@@ -1,399 +1,185 @@
-## Value Grounding and Validation Strategy
+# Computer-Use Automation System
 
-During LLM-driven discovery, the system must prevent the model from introducing unsupported values into browser actions. A proposed value can generally fall into one of three categories:
+A small working example of an AI-assisted system that operates a banking-style website through its user interface. It learns a task once, saves the steps for review, and can run an approved task again without asking the AI to choose every click.
 
-* **User-grounded value** — directly supported by the original user request or invocation inputs.
-* **Page-grounded value** — directly supported by information observed from the application during the current session.
-* **Derived or unverified value** — a value that cannot be directly grounded in either trusted source and may have been transformed, inferred, calculated, or hallucinated by the model.
+This project was built for the interface.ai Computer-Use Automation take-home assignment. It uses a **local demo website with made-up banking data**; it does not access a real bank or real customer accounts.
 
-### Keep provenance outside the main LLM
+> **Screenshot placeholder — Project overview:** Add a clear screenshot of the local demo application's home page here. Save it as `docs/screenshots/demo-home.png`, then replace this note with `![Local banking demo](docs/screenshots/demo-home.png)`.
 
-The main discovery LLM should not be responsible for declaring where its own proposed value came from. For example, the model should not be trusted to return:
+## What the project does
 
-```text
-value = "12345"
-source = "user_input"
+A user can ask a question such as **“Look up member 12345 and tell me their current savings balance.”** When no suitable approved workflow exists, the system opens the local banking website, observes its pages, and uses an AI model to choose the next permitted action. If it completes the task and can verify how to retrieve the requested output, it saves a reusable workflow as a **draft**.
+
+A person must review and approve that draft before it can be reused. On a later request, the system can select the approved workflow, fill in the new input, follow its saved steps without using the model to decide the browser actions, check that each important page was reached, and return the requested information. The AI may still be used to select a saved workflow and interpret the user's request; **the replayed browser steps themselves do not use the AI to choose actions**.
+
+When an action is unsafe, a page gives an unexpected result, or automation cannot continue confidently, the system can stop and request human help instead of blindly proceeding.
+
+## Quick start
+
+Run these commands from the **project root**, the folder containing `app/`. The uploaded project snapshot contains the `app/` source folder but does **not** contain a dependency file or a pre-populated `evidence/` folder. The commands below install the packages used by the supplied source; if your final repository has a maintained `requirements.txt`, use that instead.
+
+**1. Create a Python environment and install packages.** Python 3.12 is a suitable version for this project snapshot.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install fastapi uvicorn jinja2 python-dotenv openai playwright pydantic pytest
+python -m playwright install chromium
 ```
 
-and have the system accept that source declaration.
+On Windows, activate the environment with `.venv\Scripts\activate` instead. Playwright needs a browser installed even if the Python packages are already present.
 
-The discovery LLM's responsibility should remain narrow:
+**2. Set the model API key.** Create a file named `.env` in the project root:
 
-```text
-Observe → decide what to do next → propose an action
+```dotenv
+OPENAI_API_KEY=your_api_key_here
+OPENAI_MODEL=gpt-5-mini
+LOG_LEVEL=INFO
 ```
 
-For a fill action, it can propose the target and value. The validation layer is responsible for determining whether that value is actually grounded.
+Replace the sample key with your own. `OPENAI_MODEL` is optional; the source defaults to `gpt-5-mini`. Do **not** commit `.env`, API keys, credentials, or private run data to GitHub. A valid API key and network access are needed for a genuine AI-guided discovery run and for model-based capability selection. The tests described below can run without calling a live model.
 
-This keeps responsibilities separated:
+**3. Start the local banking demo.** Open a terminal at the project root and run:
 
-```text
-Discovery LLM
-    → What should I do next?
-
-Deterministic Validator
-    → Can the proposed action/value be proven from trusted information?
-
-Validator LLM
-    → Is an unverified or derived value acceptable under business policy?
-
-Human Operator
-    → Resolve cases that cannot be safely approved automatically.
+```bash
+source .venv/bin/activate
+python -m uvicorn app.target_app.main:app --host 127.0.0.1 --port 8000
 ```
 
-### Deterministic grounding first
+Leave this terminal running and open [http://127.0.0.1:8000](http://127.0.0.1:8000). The agent's target URL and safety settings currently use this exact local address and port; changing them requires updating the corresponding configuration.
 
-Whenever the discovery LLM proposes a value, deterministic validation should be attempted before involving another model.
+> **Screenshot placeholder — Demo application:** Capture the dashboard and member-search page, using only the included synthetic records. Suggested image paths: `docs/screenshots/dashboard.png` and `docs/screenshots/member-search.png`.
 
-Conceptually:
+**4. Open a second terminal and start the automation.** From the same project root:
 
-```text
-LLM proposes value
-        ↓
-Can it be directly grounded in trusted user input?
-        ↓
-YES → grounded
-
-NO
-        ↓
-Can it be directly grounded in trusted page/session information?
-        ↓
-YES → grounded
-
-NO
-        ↓
-DERIVED / UNVERIFIED
-        ↓
-Validator LLM
+```bash
+source .venv/bin/activate
+python -m app.agent.main
 ```
 
-The exact grounding implementation can evolve. A simple implementation can normalize and compare values against the user request and browser observations. A more mature implementation can maintain structured trusted session state containing values encountered during the run and their origins.
-
-For example:
+When you see `What do you want to do?`, enter:
 
 ```text
-member_id = 12345
-origin = user_input
-
-account_id = SAV-10022
-origin = page_observation
-
-balance = $4,250.75
-origin = page_observation
+Look up member 12345 and tell me their current savings balance.
 ```
 
-Maintaining session-level evidence is useful because a value observed on one page may legitimately be needed several steps later, after it is no longer present in the current browser observation.
+The first successful run with no matching approved capability starts **discovery**: a visible browser opens and the model explores the site. Depending on what the run verifies, it may save a draft for approval. If discovery fails or cannot verify a reusable output, it will not necessarily produce a draft. Check the terminal result rather than assuming one was saved.
 
-### Derived values
+> **Screenshot placeholder — Discovery:** Capture the agent terminal during the actual AI-guided run and the browser showing the result. Suggested paths: `docs/screenshots/discovery-terminal.png` and `docs/screenshots/discovery-result.png`.
 
-Derived values are legitimate in computer-use workflows. Examples include converting "tomorrow" into an absolute date, joining a first and last name, formatting a phone number, or transforming a value into the format expected by an application.
+## Review and approve a saved workflow
 
-However, a value that cannot be directly grounded should not automatically be trusted.
+A saved workflow is called a **capability**. Discovery saves new capabilities as drafts rather than making them immediately available for automatic replay. To review the drafts, run the following command in another terminal, or after the discovery command exits:
 
-There is also an important distinction between **derived** and **unknown**. If deterministic validation cannot find a proposed value in trusted inputs or observations, that does not prove that the model correctly derived it. The value could also be hallucinated.
+```bash
+python -m app.agent.registry.approve
+```
 
-Therefore, the safest internal classification is effectively:
+The review command shows each pending draft and offers **A** to approve, **S** to skip, or **Q** to quit. Read the saved steps, inputs, expected outputs, and checkpoints before approving. Approval saves a separate approved record; it does not edit the original draft in place.
+
+By default, the project stores drafts and approved records under `capabilities/demo_tenant/demo_banking_app/`. The filenames include generated identifiers, so do not rely on one fixed artifact filename.
+
+> **Screenshot placeholder — Capability review:** Capture a draft in the approval terminal, with the approval action visible. Suggested path: `docs/screenshots/capability-approval.png`. If showing the JSON file, hide anything that should not be published.
+
+## Replay an approved workflow
+
+Keep the demo website running, then launch the same entry point:
+
+```bash
+python -m app.agent.main
+```
+
+Enter the same type of request, for example:
 
 ```text
-DIRECTLY GROUNDED
-or
-DERIVED / UNVERIFIED
+Look up member 12345 and tell me their current savings balance.
 ```
 
-Any derived or otherwise unverified value is route
+The system checks the approved capability list. When its selector finds a suitable match, it runs the saved steps in the browser using the inputs for this request. It checks the expected page states and retrieves the declared output. If it finds no approved match, it starts discovery instead. The selected path is shown in the terminal, so confirm that the run actually says it is **reusing an approved capability** before presenting it as replay evidence.
 
+> **Screenshot placeholder — Replay:** Capture the terminal displaying the approved capability selection, replay status, completed steps, and returned output. Suggested path: `docs/screenshots/replay-success.png`.
 
-## Validation Notes
-
-* Do not let the main LLM decide whether a value came from the user request or from page information. The system should determine this deterministically.
-
-* If the value proposed by the LLM cannot be directly grounded in either trusted user input or trusted page/session information, treat it as derived or unverified.
-
-* A derived/unverified value should always be sent to a separate Validator LLM before it is used in a browser action.
-
-* The Validator LLM should make one of three decisions:
-
-  * `APPROVE`
-  * `ESCALATE_TO_HUMAN`
-  * `REJECT`
-
-* The Validator LLM should not perform the browser action itself. It only decides whether the proposed value is safe and justified. The normal executor performs the action after approval.
-
-* Deterministic validation should happen before invoking the Validator LLM wherever possible. These checks can include:
-
-  * text normalization
-  * exact/value grounding against the user request
-  * value grounding against current or previous trusted page observations
-  * data type and format checks
-  * duplicate action checks
-  * browser action validation
-  * target/reference validation
-  * allowed-action and navigation checks
-  * semantic similarity checks where deterministic matching is insufficient
-
-### High-level flow
+## How the pieces fit together
 
 ```text
-Main LLM proposes action + value
-            ↓
-Deterministic validation
-            ↓
-Can value be directly grounded?
-      ↓                   ↓
-     YES                  NO
-      ↓                   ↓
-   APPROVE        DERIVED / UNVERIFIED
-                              ↓
-                       Validator LLM
-                              ↓
-                 APPROVE / HUMAN / REJECT
-                              ↓
-                    Browser Executor
+User request
+    |
+    v
+Check approved capabilities ---- matching capability ----> Replay saved steps
+    |                                                     |
+    | no suitable match                                   v
+    v                                               Check page states
+AI-guided discovery                                        |
+    |                                                     v
+    v                                               Read verified output
+Record actions and verify output                           |
+    |                                                     v
+    v                                                Return result
+Save capability as draft
+    |
+    v
+Human reviews and approves
+    |
+    +-------------------------------> Available for later replay
+
+At any blocked or unsafe point: stop / request human help.
 ```
 
-The general principle is:
+The `app/target_app/` folder contains the local website and fake account data. The `app/agent/` folder contains the automation. Inside it, `discovery/` explores the live site; `recording/` records and shortens the observed path; `capability/` builds the reusable workflow and its inputs and outputs; `registry/` saves and approves capabilities; and `replay/` executes approved steps and reports results. The `orchestration/` folder connects discovery, selection, and replay. The `policy/` folder controls which pages and actions are allowed; `handoff/` manages human intervention; `observability/` records discovery evidence; `schemas/` defines the saved data shapes; `validation/` checks actions and results; and `llm/` contains model calls.
 
-> Use deterministic checks for anything that can be proven directly. Use the Validator LLM only when interpretation is required. Escalate to a human when the system still cannot safely justify the value.
+## What a saved capability contains
 
+A capability is a structured JSON record rather than a pasted transcript of the AI conversation. It records a version and capability name, the inputs that must be provided, the ordered browser actions, the page elements those actions target, the conditions to check along the way, and the outputs to read at the end. The approved registry record also contains information used to decide whether it matches a new request. The current output-reading approach is built around verified table rows and columns in the demo application; it should not be described as a general-purpose extractor for every possible screen.
 
-## Field-Value Compatibility and Semantic Validation
+You can inspect a draft or approved JSON record in `capabilities/demo_tenant/demo_banking_app/` after running discovery and approval. The saved artifact should be understandable without the original AI conversation. It is still important to review its recorded actions and output rules before using it.
 
-### Grounding does not guarantee field correctness
+> **Screenshot placeholder — Saved capability:** Capture a short, readable part of a real generated JSON record showing its version, inputs, actions, checkpoints, and outputs. Suggested path: `docs/screenshots/capability-json.png`.
 
-The deterministic validator verifies whether a proposed value is supported by trusted information. However, a value being grounded does not necessarily mean it belongs in the target field.
+## Safety and handling unexpected results
 
-For example:
+The example policy is defined in `app/agent/policy/demo_banking.json`. It restricts the agent to the local demo origin, lists permitted routes and action types, and blocks the demo's `/operations` pages. The example workflows focus on reading information rather than performing banking transactions. A blocked action should not be retried by bypassing the policy. Do not use this demo against real banking systems or with real customer information.
 
-```text
-User request:
-"John is 42 years old."
+Replay reports a clear status rather than assuming every click worked. Its result distinguishes a successful run, a known business outcome, a condition that may be recoverable, a case needing human intervention, and a hard failure. The result can include the completed step count, failed step, a short reason, and paths to available evidence. A missing member, for example, is a business result to communicate, not the same thing as a browser crash. A permission problem or a failed page check should not be silently treated as success.
 
-Target field:
-Name
+This is a local demonstration, not a production security guarantee. The demo uses made-up account data. Real deployments would also need secure handling of browser sessions, access to screenshots, logs, credentials, and approval permissions.
 
-Proposed value:
-42
+> **Screenshot placeholder — Unexpected result:** Capture a controlled replay with a missing demo member or another safe, repeatable error, showing the resulting status and explanation. Suggested path: `docs/screenshots/replay-error.png`.
+
+## Human help and handing control back
+
+When discovery or replay cannot safely finish, the system can ask a person to intervene. The local operator interface runs in the terminal and uses the **same live browser session**: automation pauses, the operator can inspect the page and perform the required manual action, and the operator then records what they did and whether the condition is resolved. The system decides whether it can continue or should stop. The handoff stores an intervention record, and the local demo can capture a screenshot of the stopped page.
+
+A repeatable **replay handoff demo** is available after a suitable reviewed `get_savings_balance` capability has been approved. With the demo website running, start the agent using:
+
+```bash
+HANDOFF_DEMO=1 python -m app.agent.main
 ```
 
-The value `42` is genuinely present in the user request, so provenance/grounding validation succeeds. However, it is clearly inappropriate for a `Name` field.
+Enter a request that selects the approved savings-balance capability. This local-only demo adds a temporary checkpoint condition during replay to create a human-intervention moment; it does **not** modify the saved capability. Follow the terminal's instructions, work in the already-open browser window, and report the outcome in the terminal. The demo depends on the approved capability and its allowed checkpoint-resume setting, so it will not activate for every possible saved workflow. Remove the `HANDOFF_DEMO=1` prefix for normal runs.
 
-This creates two separate validation questions:
+> **Screenshot placeholder — Human handoff:** Capture the paused automation, the terminal intervention prompt, and the same browser window being used by the operator. Suggested paths: `docs/screenshots/handoff-request.png`, `docs/screenshots/handoff-browser.png`, and `docs/screenshots/handoff-result.png`. Do not portray an injected demo condition as an unplanned production failure.
 
-```text
-1. PROVENANCE / GROUNDING
-   Did this value come from trusted information?
+## Tests and running without live model services
 
-2. FIELD-VALUE COMPATIBILITY
-   Is this trusted value appropriate for this particular field?
+The included automated tests are under `app/agent/test/`. From the project root, run:
+
+```bash
+python -m pytest app/agent/test -q
 ```
 
-The current implementation focuses primarily on the first problem.
+These tests cover parts of the architecture, policy checks, path handling, recording, replay actions, and handoff. They are useful for checking code behavior without doing a new paid AI-guided discovery run. The included local demo server itself does not need an OpenAI key. **Tests are not a substitute for the required genuine live discovery and replay demonstration.** In particular, a fully offline run of the main agent is not provided as a documented supported mode in this snapshot: its capability-selection path uses a model.
 
-### Why semantic similarity was considered
+> **Screenshot placeholder — Tests:** Capture the completed test summary from your final repository after running the command above. Suggested path: `docs/screenshots/pytest-results.png`. Use actual test output, not a mock terminal image.
 
-One possible approach for field-value compatibility is semantic similarity.
+## Evidence for reviewers
 
-Instead of only checking the raw value, the system could compare the context in which the value appeared with the target field.
+The assignment requires an `evidence/` directory containing a **real AI-driven discovery run**, a saved example capability, and logs from both discovery and replay. It also recommends including a replay with an expected error or exceptional result; a short screen recording is optional. The code writes discovery logs and replay evidence under `evidence/` and stores handoff records under `evidence/handoff/`, but the uploaded source snapshot does **not** include these generated run files. Create the required evidence by running the complete demo before submitting the public repository.
 
-For example:
+Keep a reviewable copy of the actual saved example artifact inside `evidence/` in addition to the runtime copy under `capabilities/`. For each run, include an easily recognized log or result file and, where useful, the corresponding screenshots. Redact secrets and avoid publishing sensitive browser state. In the final repository, replace the screenshot notes in this README with links to real images that you have captured. Only claim that a scenario passed if its included log or image actually demonstrates it.
 
-```text
-Source evidence:
-"from checking account 12345"
+## Design details, limitations, and next steps
 
-Target:
-"Destination account"
-```
+See [`REPORT.md`](REPORT.md) for the separate short design write-up required by the assignment. It should use these **exact seven headings**: **Architecture**, **Artifact schema**, **Determinism & error handling**, **Heterogeneity & multi-tenant**, **Escalation & handoff**, **Safety**, and **Cuts**. That report is the place to explain key decisions and trade-offs, how another website or desktop application could be supported, how workflows could be reused safely across institutions, which parts are simplified or mocked, and what would be built next. The current implementation operates on one local browser-based surface; desktop automation and a full multi-institution deployment are not demonstrated by this repository snapshot.
 
-Although `12345` is a valid and grounded account number, the surrounding context indicates that it represents the source account rather than the destination account.
-
-Similarly:
-
-```text
-Source evidence:
-"to savings account 67890"
-
-Target:
-"Destination account"
-```
-
-is semantically much more appropriate.
-
-This is important because comparing only the raw values is often insufficient. Values such as account numbers, IDs, dates, and numeric amounts carry little semantic meaning by themselves. Their surrounding context provides the useful information.
-
-### Why semantic similarity is not currently implemented
-
-Semantic compatibility is a legitimate additional safety layer, but it is intentionally not part of the current implementation.
-
-Adding it would introduce additional complexity:
-
-* embedding/model dependency,
-* similarity thresholds,
-* threshold tuning,
-* false positives and false negatives,
-* additional latency and cost,
-* more validation logic to test and explain.
-
-The expected benefit is relatively small for the current vertical slice because most actions are reversible and the system already has multiple validation layers.
-
-Therefore, the current implementation prioritizes a smaller and more deterministic validation pipeline rather than attempting to solve every possible field-value mismatch.
-
-### Current validation strategy
-
-Before a browser action is executed, the system performs deterministic checks where possible:
-
-```text
-Proposed Action
-      ↓
-Target/reference validation
-      ↓
-Value normalization
-      ↓
-Value grounding
-   ┌───────────────┐
-   │               │
-User input     Page/session
-   │               │
-   └───────┬───────┘
-           ↓
-      Grounded?
-      /       \
-    YES        NO
-     ↓          ↓
- Continue    Validator LLM
- validation      ↓
-             APPROVE
-             REJECT
-             HUMAN
-```
-
-A value that cannot be directly grounded is never automatically trusted. It is routed to the Validator LLM for additional evaluation.
-
-### Downstream validation as an additional safety net
-
-A grounded value can still be used incorrectly. For reversible operations, the system can often detect this through the subsequent application state.
-
-For example:
-
-```text
-Wrong grounded value entered
-        ↓
-Application produces unexpected state
-        ↓
-Expected element/result does not appear
-        ↓
-Checkpoint or success condition fails
-        ↓
-Retry / failure / human escalation
-```
-
-Therefore, validation does not stop when an action is approved.
-
-The system also verifies that the workflow continues toward the expected state and ultimately reaches its declared checkpoint or success condition.
-
-This provides defense at two points:
-
-```text
-BEFORE ACTION
-- Is the target valid?
-- Is the action allowed?
-- Is the value grounded?
-- Is navigation permitted?
-
-AFTER ACTION
-- Did the application respond as expected?
-- Is the workflow still progressing?
-- Was the expected state reached?
-- Did the final checkpoint succeed?
-```
-
-### Risk-based distinction
-
-Relying partly on downstream validation is reasonable for safe and reversible actions such as:
-
-* searches,
-* filters,
-* navigation,
-* opening records,
-* reading information.
-
-It is not sufficient for risky or irreversible operations.
-
-For actions such as:
-
-```text
-transfer funds
-delete a record
-submit a transaction
-change account settings
-confirm an irreversible operation
-```
-
-the system should apply stronger validation before execution because discovering the mistake afterward may be too late.
-
-The architecture therefore leaves room for stricter pre-execution validation or mandatory human confirmation for risky actions.
-
-### Future extension
-
-Field-value compatibility can be added later as another validation layer:
-
-```text
-Value grounded
-      ↓
-Basic deterministic compatibility checks
-      ↓
-Semantic compatibility signal
-      ↓
-Clearly compatible → APPROVE
-Clearly incompatible → REJECT
-Ambiguous → Validator LLM / Human
-```
-
-Basic deterministic checks could handle obvious cases first, such as email, date, numeric, phone, or other strongly typed fields.
-
-Semantic similarity would then only provide additional evidence for ambiguous fields such as:
-
-```text
-Primary Contact
-Applicant
-Beneficiary
-Recipient
-Customer Legal Name
-```
-
-Importantly, semantic similarity would not independently authorize an action. It would be treated as a weaker validation signal, with uncertain cases routed to the Validator LLM.
-
-### Design decision
-
-For the current implementation, semantic field-value compatibility is deliberately left out.
-
-The system instead prioritizes:
-
-```text
-deterministic grounding
-        +
-action/target safety checks
-        +
-risk-aware execution
-        +
-post-action/checkpoint validation
-        +
-Validator LLM for unverified values
-        +
-human escalation when necessary
-```
-
-This keeps the core implementation small, understandable, and deterministic while leaving a clear extension point for semantic compatibility validation if production experience shows that wrong-grounded-value errors are significant.
-
-The guiding trade-off is:
-
-> Grounding protects against invented values. Checkpoints protect against workflows that do not reach the intended result. Semantic field-value compatibility is a useful additional defense, but its complexity is not justified for the current implementation and can be introduced later if real failure patterns require it.
-
-ITS NOT RIGHT TO LET LLM DECIDE ON THE JSON JUST AFTER IT SEES THE NATURAL LANGUAGE QUESTION BECAUSE IT DOESN'T HAVE EXPLICIT CONTEXT AND MAY MISS THE 
-IMP PART OF THE QUESTION
-
-THE REASONING IT PERFORMED WHILE IT IS EXPLORING THE WEBSITE IS REALLY IMPORTANT FOR THE NEXT REPLAY STEPS. THAT REASONING SAYS A LOT ABOUT HOW IT MADE
-DECISION AND WHAT CAN BE THE INPUTS AND OUTPUTS AND WHAT ARE THE KEY WORDS AND THAT CAN BE LATER USED TO FETCH THE SIMILARITY BETWEEN THE NEW QUESTION 
-AND EXISTING SAVED WORKFLOW RECORDS
-
-I only use model reasoning where semantics are genuinely required. State-transition detection itself is deterministic because the discovery trace already contains before/after state evidence.
+For final submission, publish the source, `README.md`, `REPORT.md`, and the required sanitized `evidence/` folder in a **public GitHub repository**. As specified in the assignment, email the repository URL on its own line to `assignments@interface.ai` from the email address used for the application; submit the GitHub link, **not a ZIP file**.
