@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from app.agent.recording.path_segments import SamePageSegment
 from app.agent.schemas.recording import RecordedTransition
 
-
 PathVerifier = Callable[
     [list[RecordedTransition]],
     bool,

@@ -1,7 +1,8 @@
-from typing import Callable
+import logging
+from collections.abc import Callable
 
-from app.agent.schemas.capability import CapabilityArtifact
-from app.agent.schemas.outcomes import BusinessOutcomeRule
+from app.agent.policy.engine import PolicyEngine
+from app.agent.policy.models import PolicyDecision
 from app.agent.replay.business_outcomes import BusinessOutcomeDetector
 from app.agent.replay.checkpoint_validator import CheckpointValidator
 from app.agent.replay.evidence import ReplayEvidenceRecorder
@@ -17,8 +18,11 @@ from app.agent.replay.parameter_resolver import (
     ParameterResolutionError,
     ParameterResolver,
 )
-from app.agent.policy.engine import PolicyEngine
-from app.agent.policy.models import PolicyDecision
+from app.agent.schemas.capability import CapabilityArtifact
+from app.agent.schemas.outcomes import BusinessOutcomeRule
+
+
+logger = logging.getLogger(__name__)
 
 
 class ReplayEngine:
@@ -70,7 +74,7 @@ class ReplayEngine:
             )
 
         except Exception:
-            print("[REPLAY] Evidence could not be saved.")
+            logger.warning("Replay evidence could not be saved.")
 
         return result
 
@@ -307,10 +311,7 @@ class ReplayEngine:
             action_may_have_executed=False,
         )
 
-    def _run(self, artifact, inputs):
-        completed_steps = 0
-        outputs: dict[str, str] = {}
-
+    def _preflight_replay(self, artifact, inputs):
         missing_inputs = [
             parameter.name
             for parameter in artifact.inputs
@@ -319,28 +320,34 @@ class ReplayEngine:
         ]
 
         if missing_inputs:
-            return ReplayResult(
-                status=ReplayStatus.RECOVERABLE_FAILURE,
-                failure_category=ReplayFailureCategory.INPUT,
-                reason="Required replay inputs are missing.",
-                error_code="missing_required_inputs",
-                recovery_action=ReplayRecoveryAction.REQUEST_INPUT,
+            return (
+                ReplayResult(
+                    status=ReplayStatus.RECOVERABLE_FAILURE,
+                    failure_category=ReplayFailureCategory.INPUT,
+                    reason="Required replay inputs are missing.",
+                    error_code="missing_required_inputs",
+                    recovery_action=ReplayRecoveryAction.REQUEST_INPUT,
+                ),
+                None,
             )
 
         checkpoints_by_action = {}
 
         for checkpoint in artifact.checkpoints:
             if not 1 <= checkpoint.after_action <= len(artifact.actions):
-                return self._record_failure(
-                    ReplayResult(
-                        status=ReplayStatus.HARD_FAILURE,
-                        failure_category=ReplayFailureCategory.ARTIFACT,
-                        reason=(
-                            "A checkpoint references an invalid action index."
+                return (
+                    self._record_failure(
+                        ReplayResult(
+                            status=ReplayStatus.HARD_FAILURE,
+                            failure_category=ReplayFailureCategory.ARTIFACT,
+                            reason=(
+                                "A checkpoint references an invalid action index."
+                            ),
+                            error_code="invalid_checkpoint_reference",
                         ),
-                        error_code="invalid_checkpoint_reference",
+                        phase="preflight",
                     ),
-                    phase="preflight",
+                    None,
                 )
 
             checkpoints_by_action.setdefault(
@@ -348,132 +355,160 @@ class ReplayEngine:
             ).append(checkpoint)
 
         initial_policy_failure = self._check_policy_scope(
-            completed_steps=completed_steps,
+            completed_steps=0,
             failed_step=None,
         )
 
         if initial_policy_failure is not None:
-            return initial_policy_failure
-        
-        for step, action in enumerate(artifact.actions, start=1):
-            print(f"[REPLAY] Step {step}: {action.action.value}")
+            return initial_policy_failure, None
 
-            try:
-                resolved_action = self.resolver.resolve_action(
-                    action=action,
-                    inputs=inputs,
-                )
+        return None, checkpoints_by_action
 
-            except ParameterResolutionError:
-                return self._record_failure(
-                    ReplayResult(
-                        status=ReplayStatus.HARD_FAILURE,
-                        failure_category=ReplayFailureCategory.INPUT,
-                        reason="An action references a missing replay input.",
-                        error_code="parameter_resolution_error",
-                        completed_steps=completed_steps,
-                        failed_step=step,
-                    ),
-                    phase="parameters",
-                )
-
-            policy_failure = self._check_action_policy(
-                action=resolved_action,
-                completed_steps=completed_steps,
-                failed_step=step,
+    def _resolve_step_action(
+        self,
+        *,
+        action,
+        inputs,
+        completed_steps: int,
+        step: int,
+    ):
+        try:
+            resolved_action = self.resolver.resolve_action(
+                action=action,
+                inputs=inputs,
             )
 
-            if policy_failure is not None:
-                return policy_failure
-            
+        except ParameterResolutionError:
+            return None, self._record_failure(
+                ReplayResult(
+                    status=ReplayStatus.HARD_FAILURE,
+                    failure_category=ReplayFailureCategory.INPUT,
+                    reason="An action references a missing replay input.",
+                    error_code="parameter_resolution_error",
+                    completed_steps=completed_steps,
+                    failed_step=step,
+                ),
+                phase="parameters",
+            )
+
+        return resolved_action, None
+
+    def _execute_step_action(
+        self,
+        *,
+        resolved_action,
+        completed_steps: int,
+        step: int,
+    ):
+        try:
+            return self.executor.execute(resolved_action), None
+
+        except Exception:
+            return None, self._record_failure(
+                ReplayResult(
+                    status=ReplayStatus.HARD_FAILURE,
+                    failure_category=ReplayFailureCategory.EXECUTION,
+                    reason="An unexpected action execution error occurred.",
+                    error_code="execution_error",
+                    completed_steps=completed_steps,
+                    failed_step=step,
+                ),
+                phase="action",
+            )
+
+    def _handle_action_failure(
+        self,
+        *,
+        action_result,
+        step: int,
+        inputs,
+        completed_steps: int,
+    ):
+        categories = {
+            ReplayActionStatus.INVALID_ACTION: ReplayFailureCategory.ARTIFACT,
+            ReplayActionStatus.TARGET_NOT_FOUND: ReplayFailureCategory.TARGETING,
+            ReplayActionStatus.TARGET_NOT_INTERACTABLE: (
+                ReplayFailureCategory.TARGETING
+            ),
+            ReplayActionStatus.TIMEOUT: ReplayFailureCategory.TIMEOUT,
+            ReplayActionStatus.EXECUTION_ERROR: ReplayFailureCategory.EXECUTION,
+        }
+
+        failure = self._record_failure(
+            ReplayResult(
+                status=ReplayStatus.HARD_FAILURE,
+                failure_category=categories.get(
+                    action_result.status,
+                    ReplayFailureCategory.UNKNOWN,
+                ),
+                reason="The action did not complete successfully.",
+                error_code=action_result.status.value,
+                completed_steps=completed_steps,
+                failed_step=step,
+                action_may_have_executed=(
+                    action_result.action_may_have_executed
+                ),
+            ),
+            phase="action",
+        )
+
+        application_conditions = {
+            ReplayActionStatus.TARGET_NOT_FOUND,
+            ReplayActionStatus.TARGET_NOT_INTERACTABLE,
+            ReplayActionStatus.TIMEOUT,
+        }
+
+        if action_result.status not in application_conditions:
+            return failure
+
+        outcome = self._business_outcome(
+            step,
+            inputs,
+            completed_steps,
+        )
+
+        if outcome is not None:
+            return outcome
+
+        # Inspection is permitted, but this initial version
+        # never retries or skips a failed action.
+        return self._offer_handoff(failure)
+
+    def _validate_step_checkpoints(
+        self,
+        *,
+        step_checkpoints,
+        step: int,
+        inputs,
+        completed_steps: int,
+    ):
+        for checkpoint in step_checkpoints:
             try:
-                action_result = self.executor.execute(
-                    resolved_action
+                valid, _ = self.checkpoint_validator.wait_and_validate(
+                    checkpoint=checkpoint,
+                    page=self.page,
+                    inputs=inputs,
+                    timeout_ms=5000,
                 )
 
             except Exception:
                 return self._record_failure(
                     ReplayResult(
                         status=ReplayStatus.HARD_FAILURE,
-                        failure_category=ReplayFailureCategory.EXECUTION,
-                        reason=(
-                            "An unexpected action execution error occurred."
-                        ),
-                        error_code="execution_error",
+                        failure_category=ReplayFailureCategory.CHECKPOINT,
+                        reason="Checkpoint validation raised an error.",
+                        error_code="checkpoint_validation_error",
                         completed_steps=completed_steps,
                         failed_step=step,
                     ),
-                    phase="action",
+                    phase="checkpoint",
                 )
 
-            if not action_result.success:
-                categories = {
-                    ReplayActionStatus.INVALID_ACTION: (
-                        ReplayFailureCategory.ARTIFACT
-                    ),
-                    ReplayActionStatus.TARGET_NOT_FOUND: (
-                        ReplayFailureCategory.TARGETING
-                    ),
-                    ReplayActionStatus.TARGET_NOT_INTERACTABLE: (
-                        ReplayFailureCategory.TARGETING
-                    ),
-                    ReplayActionStatus.TIMEOUT: (
-                        ReplayFailureCategory.TIMEOUT
-                    ),
-                    ReplayActionStatus.EXECUTION_ERROR: (
-                        ReplayFailureCategory.EXECUTION
-                    ),
-                }
+            if valid:
+                continue
 
-                failure = self._record_failure(
-                    ReplayResult(
-                        status=ReplayStatus.HARD_FAILURE,
-                        failure_category=categories.get(
-                            action_result.status,
-                            ReplayFailureCategory.UNKNOWN,
-                        ),
-                        reason="The action did not complete successfully.",
-                        error_code=action_result.status.value,
-                        completed_steps=completed_steps,
-                        failed_step=step,
-                        action_may_have_executed=(
-                            action_result.action_may_have_executed
-                        ),
-                    ),
-                    phase="action",
-                )
-
-                application_conditions = {
-                    ReplayActionStatus.TARGET_NOT_FOUND,
-                    ReplayActionStatus.TARGET_NOT_INTERACTABLE,
-                    ReplayActionStatus.TIMEOUT,
-                }
-
-                if action_result.status in application_conditions:
-                    outcome = self._business_outcome(
-                        step,
-                        inputs,
-                        completed_steps,
-                    )
-
-                    if outcome is not None:
-                        return outcome
-
-                    # Inspection is permitted, but this initial version
-                    # never retries or skips a failed action.
-                    return self._offer_handoff(failure)
-
-                return failure
-            post_action_policy_failure = self._check_policy_scope(
-                completed_steps=completed_steps,
-                failed_step=step,
-                action_may_have_executed=True,
-            )
-
-            if post_action_policy_failure is not None:
-                return post_action_policy_failure
-            
-            # Expected business outcomes take precedence over checkpoints.
+            # A business-outcome screen may have appeared while
+            # waiting for the normal checkpoint.
             outcome = self._business_outcome(
                 step,
                 inputs,
@@ -483,82 +518,113 @@ class ReplayEngine:
             if outcome is not None:
                 return outcome
 
-            step_checkpoints = checkpoints_by_action.get(step, [])
+            failure = self._record_failure(
+                ReplayResult(
+                    status=ReplayStatus.HARD_FAILURE,
+                    failure_category=ReplayFailureCategory.CHECKPOINT,
+                    reason=(
+                        "The expected application state was not verified."
+                    ),
+                    error_code="checkpoint_failed",
+                    completed_steps=completed_steps,
+                    failed_step=step,
+                    action_may_have_executed=True,
+                ),
+                phase="checkpoint",
+            )
 
-            for checkpoint in step_checkpoints:
-                try:
-                    valid, _ = (
-                        self.checkpoint_validator.wait_and_validate(
-                            checkpoint=checkpoint,
-                            page=self.page,
-                            inputs=inputs,
-                            timeout_ms=5000,
-                        )
-                    )
+            terminal = self._offer_handoff(
+                failure,
+                verify_resume=self._resume_verifier(
+                    step_checkpoints,
+                    inputs,
+                ),
+            )
 
-                except Exception:
-                    return self._record_failure(
-                        ReplayResult(
-                            status=ReplayStatus.HARD_FAILURE,
-                            failure_category=ReplayFailureCategory.CHECKPOINT,
-                            reason="Checkpoint validation raised an error.",
-                            error_code="checkpoint_validation_error",
-                            completed_steps=completed_steps,
-                            failed_step=step,
-                        ),
-                        phase="checkpoint",
-                    )
+            if terminal is not None:
+                return terminal
 
-                if not valid:
-                    # A business-outcome screen may have appeared while
-                    # waiting for the normal checkpoint.
-                    outcome = self._business_outcome(
-                        step,
-                        inputs,
-                        completed_steps,
-                    )
+            # The callback verified ALL checkpoints for this step.
+            # Continue without executing this action again.
+            break
 
-                    if outcome is not None:
-                        return outcome
+        return None
 
-                    failure = self._record_failure(
-                        ReplayResult(
-                            status=ReplayStatus.HARD_FAILURE,
-                            failure_category=ReplayFailureCategory.CHECKPOINT,
-                            reason=(
-                                "The expected application state "
-                                "was not verified."
-                            ),
-                            error_code="checkpoint_failed",
-                            completed_steps=completed_steps,
-                            failed_step=step,
-                            action_may_have_executed=True,
-                        ),
-                        phase="checkpoint",
-                    )
+    def _run_step(
+        self,
+        *,
+        action,
+        step: int,
+        inputs,
+        completed_steps: int,
+        step_checkpoints,
+    ):
+        resolved_action, terminal = self._resolve_step_action(
+            action=action,
+            inputs=inputs,
+            completed_steps=completed_steps,
+            step=step,
+        )
 
-                    terminal = self._offer_handoff(
-                        failure,
-                        verify_resume=self._resume_verifier(
-                            step_checkpoints,
-                            inputs,
-                        ),
-                    )
+        if terminal is not None:
+            return terminal
 
-                    if terminal is not None:
-                        return terminal
+        policy_failure = self._check_action_policy(
+            action=resolved_action,
+            completed_steps=completed_steps,
+            failed_step=step,
+        )
 
-                    # The callback verified ALL checkpoints for this step.
-                    # Continue below without executing this action again.
-                    break
+        if policy_failure is not None:
+            return policy_failure
 
-            completed_steps += 1
-            print(f"[REPLAY] Step {step} completed.")
+        action_result, terminal = self._execute_step_action(
+            resolved_action=resolved_action,
+            completed_steps=completed_steps,
+            step=step,
+        )
 
-        # Keep your existing Layer 3 output-extraction code below here.
+        if terminal is not None:
+            return terminal
 
-        # Layer 3: Extract outputs using the saved bindings.
-        print("\n========== REPLAY OUTPUT EXTRACTION ==========")
+        if not action_result.success:
+            return self._handle_action_failure(
+                action_result=action_result,
+                step=step,
+                inputs=inputs,
+                completed_steps=completed_steps,
+            )
+
+        post_action_policy_failure = self._check_policy_scope(
+            completed_steps=completed_steps,
+            failed_step=step,
+            action_may_have_executed=True,
+        )
+
+        if post_action_policy_failure is not None:
+            return post_action_policy_failure
+
+        # Expected business outcomes take precedence over checkpoints.
+        outcome = self._business_outcome(
+            step,
+            inputs,
+            completed_steps,
+        )
+
+        if outcome is not None:
+            return outcome
+
+        return self._validate_step_checkpoints(
+            step_checkpoints=step_checkpoints,
+            step=step,
+            inputs=inputs,
+            completed_steps=completed_steps,
+        )
+
+    def _extract_outputs(self, *, artifact, completed_steps: int):
+        outputs: dict[str, str] = {}
+
+        logger.info("Extracting replay outputs.")
 
         for output in artifact.outputs:
             if output.name in outputs:
@@ -593,6 +659,7 @@ class ReplayEngine:
                     row_match_value=binding.row_match.value,
                     value_column=binding.value_column,
                 )
+
             except Exception:
                 return self._record_failure(
                     ReplayResult(
@@ -634,12 +701,45 @@ class ReplayEngine:
                 )
 
             outputs[output.name] = values[0]
-            print("[REPLAY] Output extracted successfully.")
+            logger.info("Output extracted successfully: %s", output.name)
 
         return ReplayResult(
             status=ReplayStatus.SUCCESS,
             reason="Capability replay completed successfully.",
             outputs=outputs,
+            completed_steps=completed_steps,
+        )
+
+    def _run(self, artifact, inputs):
+        preflight_failure, checkpoints_by_action = self._preflight_replay(
+            artifact,
+            inputs,
+        )
+
+        if preflight_failure is not None:
+            return preflight_failure
+
+        completed_steps = 0
+
+        for step, action in enumerate(artifact.actions, start=1):
+            logger.info("Replay step %s: %s", step, action.action.value)
+
+            terminal = self._run_step(
+                action=action,
+                step=step,
+                inputs=inputs,
+                completed_steps=completed_steps,
+                step_checkpoints=checkpoints_by_action.get(step, []),
+            )
+
+            if terminal is not None:
+                return terminal
+
+            completed_steps += 1
+            logger.info("Replay step %s completed.", step)
+
+        return self._extract_outputs(
+            artifact=artifact,
             completed_steps=completed_steps,
         )
 

@@ -1,8 +1,8 @@
-from app.agent.recording.state_fingerprint import (
-    build_state_fingerprint,
-)
 from app.agent.recording.path_segments import (
     SamePageSegmentDetector,
+)
+from app.agent.recording.state_fingerprint import (
+    build_state_fingerprint,
 )
 from app.agent.schemas.discovery import (
     ActionType,
@@ -12,6 +12,7 @@ from app.agent.schemas.recording import (
     RecordedState,
     RecordedTransition,
 )
+
 
 def state(
     url: str,

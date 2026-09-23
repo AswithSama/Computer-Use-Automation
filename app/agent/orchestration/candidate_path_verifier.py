@@ -15,7 +15,6 @@ from app.agent.schemas.recording import (
     RecordedTransition,
 )
 
-
 BrowserFactory = Callable[[], BrowserSession]
 
 

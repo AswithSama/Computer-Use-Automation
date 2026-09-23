@@ -1,7 +1,9 @@
 """Discovery phase: explore the app, compile a capability, save a draft."""
 
+import logging
 from collections.abc import Callable
-from app.agent.policy.engine import PolicyEngine
+
+from app.agent.console import field, section, step, success
 from app.agent.capability.checkpoint_detector import CheckpointDetector
 from app.agent.capability.compiler import CapabilityCompiler
 from app.agent.capability.context import CapabilityContextBuilder
@@ -12,15 +14,19 @@ from app.agent.capability.selection_context_generator import (
 )
 from app.agent.discovery.discovery_agent import DiscoveryAgent
 from app.agent.discovery.output_binding.output_grounder import OutputGrounder
-from app.agent.registry.registry import CapabilityRegistry
-from app.agent.schemas.outcomes import BusinessOutcomeRule
 from app.agent.handoff.manager import HumanHandoffManager
 from app.agent.handoff.operator import TerminalOperator
 from app.agent.orchestration.path_optimization import (
     minimize_discovery_result,
 )
 from app.agent.policy.engine import PolicyEngine
+from app.agent.registry.registry import CapabilityRegistry
 from app.agent.schemas.discovery import ActionType
+from app.agent.schemas.outcomes import BusinessOutcomeRule
+
+
+logger = logging.getLogger(__name__)
+
 
 class DiscoveryFlow:
     """
@@ -72,7 +78,9 @@ class DiscoveryFlow:
         require their own capability ID, description, and outcome rules
         before they can be saved as reusable capabilities.
         """
-        print("\n========== DISCOVERY ==========")
+        section("DISCOVERY")
+        field("Mode", "LLM-guided exploration")
+        logger.debug("Starting discovery.")
 
         agent = DiscoveryAgent(
             max_steps=20,
@@ -89,49 +97,64 @@ class DiscoveryFlow:
         )
 
         if result is None:
-            print("Discovery did not complete successfully.")
+            logger.warning("Discovery did not complete successfully.")
             return None
 
-        print("\n========== DISCOVERY RESULT ==========")
-        print(result.result)
-
-        print("\nExecution trace:")
-        for transition in result.execution_trace:
-            print(
-                f"Step {transition.step}: "
-                f"{transition.action.action.value}"
-            )
-
-        print("\nCandidate path:")
         for transition in result.candidate_path:
-            print(
-                f"Step {transition.step}: "
-                f"{transition.action.action.value}"
+            action = transition.action
+            target = (
+                action.target_name
+                or action.target_role
+                or action.target_ref
+                or ""
+            )
+            step(
+                transition.step,
+                action.action.value,
+                target,
             )
 
-        print("\nFinal state:")
-        print(result.final_state.url)
+        success("Discovery completed")
+        print()
+        field("Result", result.result)
+        logger.debug(
+            "Actions executed: %s | Candidate actions: %s | Final URL: %s",
+            len(result.execution_trace),
+            len(result.candidate_path),
+            result.final_state.url,
+        )
+        logger.debug(
+            "Execution trace: %s",
+            [
+                (transition.step, transition.action.action.value)
+                for transition in result.execution_trace
+            ],
+        )
+        logger.debug(
+            "Candidate path: %s",
+            [
+                (transition.step, transition.action.action.value)
+                for transition in result.candidate_path
+            ],
+        )
         if result.human_assisted or result.intervention_count > 0:
-            print(
-                "\n[DISCOVERY] The task completed with human assistance."
-                "\n[DISCOVERY] Manual actions are recorded separately "
-                "and are not part of an autonomous replay path."
-                "\n[DISCOVERY] No capability draft was compiled or saved. "
-                "An independently verified autonomous run is required."
+            logger.warning(
+                "Task completed with human assistance; no autonomous "
+                "capability draft will be saved."
             )
-
-            for evidence_ref in result.evidence_refs:
-                print(f"[DISCOVERY] Intervention evidence: {evidence_ref}")
+            logger.debug(
+                "Intervention evidence: %s",
+                result.evidence_refs,
+            )
 
             return result
 
         # Do not save an unrelated discovered workflow under the
         # hardcoded savings-balance capability ID.
         if "savings" not in user_request.casefold():
-            print(
-                "\n[DISCOVERY] Workflow discovery completed, but this "
-                "demo's capability compiler is currently configured "
-                "for savings-balance requests only. No draft was saved."
+            logger.warning(
+                "Workflow discovery completed, but the demo compiler is "
+                "configured for savings-balance requests only; no draft saved."
             )
             return result
 
@@ -157,20 +180,23 @@ class DiscoveryFlow:
             minimized_path_length = len(result.candidate_path)
 
             if minimized_path_length < original_path_length:
-                print(
-                    "\n[DISCOVERY] Verified path minimization: "
-                    f"{original_path_length} -> "
-                    f"{minimized_path_length} actions."
+                logger.debug(
+                    "Verified path minimization: %s -> %s actions.",
+                    original_path_length,
+                    minimized_path_length,
                 )
             else:
-                print(
-                    "\n[DISCOVERY] Original candidate path retained."
-                )
+                logger.debug("Original candidate path retained.")
         else:
-            print(
-                "\n[DISCOVERY] Path minimization skipped: "
-                "no shared policy engine was supplied."
+            logger.warning(
+                "Path minimization skipped: no shared policy engine supplied."
             )
+
+        section("VERIFICATION")
+        field(
+            "Path",
+            f"{len(result.candidate_path)} actions retained ✓",
+        )
 
         # ---------------------------------------------------------
         # Build capability context.
@@ -182,8 +208,10 @@ class DiscoveryFlow:
             discovery_result=result,
         )
 
-        print("\n========== CAPABILITY CONTEXT ==========")
-        print(capability_context.model_dump_json(indent=2))
+        logger.debug(
+            "Capability context: %s",
+            capability_context.model_dump_json(),
+        )
 
         # ---------------------------------------------------------
         # Extract and verify reusable inputs.
@@ -201,23 +229,59 @@ class DiscoveryFlow:
             context=capability_context,
         )
 
-        print("\n========== EXTRACTED INPUTS ==========")
-        print(input_result.model_dump_json(indent=2))
 
-        print("\n========== INPUT VERIFICATION ==========")
-        print(f"Valid: {verification_result.valid}")
-        print(f"Reason: {verification_result.reason}")
+        logger.debug(
+            "Inputs extracted: %s",
+            [
+                (item.name, item.type)
+                for item in input_result.inputs
+            ],
+        )
+        logger.debug(
+            "Input verification: %s",
+            "PASS" if verification_result.valid else "FAIL",
+        )
+        logger.debug(
+            "Extracted inputs: %s",
+            input_result.model_dump_json(),
+        )
+        logger.debug(
+            "Input verification reason: %s",
+            verification_result.reason,
+        )
 
         if not verification_result.valid:
-            print("Input verification failed. No draft was saved.")
+            logger.error("Input verification failed; no draft saved.")
             return None
 
+        for rejected in verification_result.rejected_inputs:
+            logger.debug(
+                "Rejected input proposal %s: %s",
+                rejected.name,
+                rejected.reason,
+            )
+
+        input_result = verification_result.verified_extraction
+
+        verified_input_summary = ", ".join(
+            f"{item.name} [{item.type}]"
+            for item in input_result.inputs
+        ) or "None"
+        field("Inputs", f"{verified_input_summary} ✓")
+
+        logger.debug(
+            "Verified inputs: %s",
+            [
+                (candidate.name, candidate.type)
+                for candidate in input_result.inputs
+            ],
+        )
         # ---------------------------------------------------------
         # Ground observed outputs in the final page state.
         # ---------------------------------------------------------
         output_grounder = OutputGrounder()
 
-        print("\n========== OUTPUT GROUNDING ==========")
+        logger.debug("Grounding declared outputs.")
 
         for output in result.outputs:
             evidence = output_grounder.ground(
@@ -225,13 +289,16 @@ class DiscoveryFlow:
                 observation=result.final_state.observation,
             )
 
-            print(f"\nOutput: {evidence.output_name}")
-            print(f"Type: {evidence.output_type}")
-            print(f"Value: {evidence.observed_value}")
-            print("Matching evidence:")
-
-            for line in evidence.matching_lines:
-                print(line)
+            field(
+                "Output",
+                f"{evidence.output_name} [{evidence.output_type}] ✓",
+            )
+            logger.debug(
+                "Grounded output %s value=%s evidence=%s",
+                evidence.output_name,
+                evidence.observed_value,
+                evidence.matching_lines,
+            )
 
         # ---------------------------------------------------------
         # Detect checkpoint candidates.
@@ -242,16 +309,22 @@ class DiscoveryFlow:
             candidate_path=result.candidate_path,
         )
 
-        print("\n========== CHECKPOINT DETECTION ==========")
-
-        for candidate in checkpoint_candidates:
-            print(f"\nStep: {candidate.source_step}")
-            print(
-                f"Evidence type: "
-                f"{candidate.evidence_type.value}"
-            )
-            print(f"Before URL: {candidate.before_url}")
-            print(f"After URL: {candidate.after_url}")
+        field(
+            "Checkpoints",
+            f"{len(checkpoint_candidates)} ✓",
+        )
+        logger.debug(
+            "Checkpoint candidates: %s",
+            [
+                {
+                    "step": candidate.source_step,
+                    "evidence_type": candidate.evidence_type.value,
+                    "before_url": candidate.before_url,
+                    "after_url": candidate.after_url,
+                }
+                for candidate in checkpoint_candidates
+            ],
+        )
 
         # ---------------------------------------------------------
         # Compile the reusable capability.
@@ -267,21 +340,29 @@ class DiscoveryFlow:
             output_locations=result.output_locations,
         )
 
-        print("\n========== CAPABILITY ARTIFACT ==========")
-        print(artifact.model_dump_json(indent=2))
+        section("CAPABILITY")
+        field("ID", artifact.capability_id)
+        field("Actions", len(artifact.actions))
+        field("Inputs", len(artifact.inputs))
+        field("Outputs", len(artifact.outputs))
+        field("Checkpoints", len(artifact.checkpoints))
+        logger.debug(
+            "Full capability artifact: %s",
+            artifact.model_dump_json(),
+        )
 
         # ---------------------------------------------------------
         # Generate selection-facing context with a separate LLM call.
         # ---------------------------------------------------------
-        selection_context = SelectionContextGenerator(
-            ask_llm=self.ask_llm,
-        ).generate(
+        selection_context = SelectionContextGenerator().generate(
             user_request=user_request,
             artifact=artifact,
         )
 
-        print("\n========== SELECTION CONTEXT ==========")
-        print(selection_context.model_dump_json(indent=2))
+        logger.debug(
+            "Selection context: %s",
+            selection_context.model_dump_json(),
+        )
 
         # ---------------------------------------------------------
         # Known business outcomes for the local savings-balance demo.
@@ -302,11 +383,9 @@ class DiscoveryFlow:
         ]
 
         if actual_actions != expected_actions:
-            print(
-                "\n[DISCOVERY] The compiled action sequence differs "
-                "from the savings-balance workflow for which the "
-                "business-outcome rules were written. "
-                "No draft was saved; review the artifact and rules."
+            logger.error(
+                "Compiled action sequence differs from the savings-balance "
+                "workflow expected by the business-outcome rules; no draft saved."
             )
             return None
 
@@ -354,11 +433,8 @@ class DiscoveryFlow:
         assert loaded.selection_context is not None
         assert len(loaded.business_outcome_rules) == 2
 
-        print("\n========== REGISTRY ==========")
-        print(f"[DISCOVERY] Capability draft saved: {saved_path}")
-        print(
-            "[DISCOVERY] Draft is awaiting human review. "
-            "It is not eligible for replay yet."
-        )
+        success("Draft saved")
+        field("File", saved_path)
+        field("Status", "Awaiting human approval")
 
         return saved_path

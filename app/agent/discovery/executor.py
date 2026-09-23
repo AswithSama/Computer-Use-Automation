@@ -1,7 +1,5 @@
-from urllib.parse import urljoin, urlparse
-
-from app.agent.schemas.discovery import ActionType, BrowserAction
 from collections.abc import Callable
+from urllib.parse import urljoin, urlparse
 
 from app.agent.policy.engine import PolicyEngine
 from app.agent.policy.models import (
@@ -9,6 +7,8 @@ from app.agent.policy.models import (
     PolicyResult,
     PolicyViolation,
 )
+from app.agent.schemas.discovery import ActionType, BrowserAction
+
 
 class ActionExecutor:
     def __init__(

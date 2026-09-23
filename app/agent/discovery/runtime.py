@@ -11,7 +11,6 @@ from app.agent.handoff.decision import (
 from app.agent.handoff.manager import HumanHandoffManager
 from app.agent.handoff.models import ExecutionPhase, InterventionRequest
 from app.agent.observability.discovery_logger import DiscoveryLogger
-from app.agent.recording.trajectory_recorder import TrajectoryRecorder
 from app.agent.schemas.recording import RecordedTransition
 
 

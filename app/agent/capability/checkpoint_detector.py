@@ -3,7 +3,7 @@ from enum import Enum
 
 from app.agent.schemas.discovery import ActionType
 from app.agent.schemas.recording import RecordedTransition
-
+from typing import ClassVar
 
 class CheckpointEvidenceType(str, Enum):
     URL = "url"
@@ -21,7 +21,7 @@ class CheckpointCandidate:
 
 class CheckpointDetector:
 
-    CHECKPOINT_ACTIONS = {
+    CHECKPOINT_ACTIONS: ClassVar[set[ActionType]]= {
         ActionType.CLICK,
         ActionType.NAVIGATE,
         ActionType.GO_BACK,

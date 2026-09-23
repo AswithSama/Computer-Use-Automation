@@ -2,12 +2,12 @@ from urllib.parse import urljoin
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from app.agent.schemas.capability import CapabilityAction
-from app.agent.schemas.discovery import ActionType
 from app.agent.replay.models import (
     ReplayActionResult,
     ReplayActionStatus,
 )
+from app.agent.schemas.capability import CapabilityAction
+from app.agent.schemas.discovery import ActionType
 
 
 class ReplayActionExecutor:

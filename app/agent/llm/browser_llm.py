@@ -1,10 +1,5 @@
-import json
-import os
-
-from openai import OpenAI
-
+from app.agent.llm.client import StructuredLLMClient
 from app.agent.schemas.discovery import BrowserAction
-
 
 SYSTEM_PROMPT = """
 You are a browser reasoning agent.
@@ -183,12 +178,12 @@ BROWSER_ACTION_SCHEMA = {
 
 class BrowserLLM:
     def __init__(self):
-        self.client = OpenAI()
+        self.llm = StructuredLLMClient()
 
-        self.model = os.getenv(
-            "BROWSER_MODEL",
-            "gpt-5.6-luna",
-        )
+        # Kept for collaborators that intentionally share the same
+        # client/model during one discovery run.
+        self.client = self.llm.client
+        self.model = self.llm.model
 
     def decide(
         self,
@@ -203,23 +198,13 @@ class BrowserLLM:
             "page_observation": observation,
         }
 
-        response = self.client.responses.create(
-            model=self.model,
+        output_text = self.llm.create_json_schema(
             instructions=SYSTEM_PROMPT,
-            input=json.dumps(
-                input_data,
-                indent=2,
-            ),
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "browser_action",
-                    "strict": True,
-                    "schema": BROWSER_ACTION_SCHEMA,
-                }
-            },
+            input_data=input_data,
+            schema_name="browser_action",
+            schema=BROWSER_ACTION_SCHEMA,
         )
 
         return BrowserAction.model_validate_json(
-            response.output_text
+            output_text
         )

@@ -13,7 +13,6 @@ from app.agent.schemas.recording import (
     RecordedTransition,
 )
 
-
 BASE_URL = "http://127.0.0.1:8000/test"
 
 

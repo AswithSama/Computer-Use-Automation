@@ -1,9 +1,11 @@
 """Replay orchestration, including synchronous human handoff."""
 
+import logging
 import os
 from urllib.parse import urlparse
 from uuid import uuid4
-from app.agent.policy.engine import PolicyEngine
+
+from app.agent.console import field, section, success
 from app.agent.discovery.browser import BrowserSession
 from app.agent.handoff.decision import (
     ConditionKind,
@@ -17,11 +19,15 @@ from app.agent.handoff.models import (
     InterventionRequest,
 )
 from app.agent.handoff.operator import TerminalOperator
+from app.agent.policy.engine import PolicyEngine
 from app.agent.replay.models import (
     ReplayRecoveryAction,
     ReplayStatus,
 )
 from app.agent.replay.replay_engine import ReplayEngine
+
+
+logger = logging.getLogger(__name__)
 
 
 class ReplayFlow:
@@ -202,9 +208,8 @@ class ReplayFlow:
 
             injected = True
 
-            print(
-                "\n[DEMO] A temporary checkpoint condition was added."
-                "\n[DEMO] Wait for the human-intervention prompt."
+            logger.info(
+                "Demo checkpoint condition added; waiting for human intervention."
             )
 
             # The marker is absent until the human clicks the demo button.
@@ -242,7 +247,13 @@ class ReplayFlow:
         business_outcome_rules,
         inputs,
     ):
-        print("\n========== DETERMINISTIC REPLAY ==========")
+        section("REPLAY")
+        field("Capability", artifact.capability_id)
+        field(
+            "Inputs",
+            ", ".join(sorted(inputs)) if inputs else "None",
+        )
+        logger.debug("Starting deterministic replay.")
 
         browser = BrowserSession(headless=False)
         run_id = str(uuid4())
@@ -273,10 +284,9 @@ class ReplayFlow:
                     return False
 
                 if verify_resume is None:
-                    print(
-                        "[REPLAY] Inspection-only handoff: this run will "
-                        "stop after intervention. Automatic continuation "
-                        "is not available for this condition."
+                    logger.info(
+                        "Inspection-only handoff: this run will stop after "
+                        "intervention; automatic continuation is unavailable."
                     )
                 # Show the handoff demo condition, when the demo is active.
                 activate_demo()
@@ -290,9 +300,9 @@ class ReplayFlow:
                     )
 
                 except Exception:
-                    print(
-                        "[REPLAY] Handoff screenshot capture failed. "
-                        "The intervention cannot proceed."
+                    logger.error(
+                        "Handoff screenshot capture failed; "
+                        "the intervention cannot proceed."
                     )
                     return False
                 
@@ -406,12 +416,39 @@ class ReplayFlow:
                     )
 
                 else:
-                    print(
-                        "[REPLAY] Required inputs are still missing."
-                    )
+                    logger.warning("Required replay inputs are still missing.")
 
-            print("\n========== REPLAY RESULT ==========")
-            print(result.model_dump_json(indent=2))
+            if result.status == ReplayStatus.SUCCESS:
+                success("Deterministic replay completed")
+
+            field("Status", result.status.value)
+            field("Completed", f"{result.completed_steps} steps")
+            field(
+                "Human assisted",
+                "Yes" if result.human_assisted else "No",
+            )
+
+            if result.outputs:
+                print()
+                for name, value in result.outputs.items():
+                    field("Result", f"{name} = {value}")
+            elif result.status != ReplayStatus.SUCCESS:
+                field("Reason", result.reason)
+            if result.error_code:
+                logger.warning(
+                    "Replay error: %s | %s",
+                    result.error_code,
+                    result.reason,
+                )
+            if result.outputs:
+                logger.debug(
+                    "Replay outputs returned: %s",
+                    sorted(result.outputs),
+                )
+            logger.debug(
+                "Full replay result: %s",
+                result.model_dump_json(),
+            )
 
             return result
 

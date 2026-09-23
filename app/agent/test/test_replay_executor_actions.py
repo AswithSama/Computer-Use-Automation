@@ -8,7 +8,6 @@ from app.agent.schemas.capability import (
 )
 from app.agent.schemas.discovery import ActionType
 
-
 BASE_URL = "http://127.0.0.1:8000"
 
 

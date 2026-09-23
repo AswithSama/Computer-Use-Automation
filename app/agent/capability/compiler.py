@@ -1,6 +1,13 @@
 from urllib.parse import urlparse
 
-from app.agent.schemas.discovery import ActionType
+from app.agent.capability.checkpoint_detector import (
+    CheckpointCandidate,
+    CheckpointEvidenceType,
+)
+from app.agent.capability.context import CapabilityContext
+from app.agent.capability.inputs.input_extraction import (
+    InputExtractionResult,
+)
 from app.agent.schemas.capability import (
     CapabilityAction,
     CapabilityArtifact,
@@ -11,14 +18,7 @@ from app.agent.schemas.capability import (
     TableOutputBinding,
     TableRowMatch,
 )
-from app.agent.capability.checkpoint_detector import (
-    CheckpointCandidate,
-    CheckpointEvidenceType,
-)
-from app.agent.capability.inputs.input_extraction import (
-    InputExtractionResult,
-)
-from app.agent.capability.context import CapabilityContext
+from app.agent.schemas.discovery import ActionType
 from app.agent.schemas.recording import (
     DiscoveredOutputLocation,
 )

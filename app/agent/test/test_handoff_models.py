@@ -1,12 +1,31 @@
 import json
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import uuid4
-from pathlib import Path
+
 import pytest
 
-from types import SimpleNamespace
-
 import app.agent.orchestration.replay_flow as replay_flow_module
+from app.agent.handoff.decision import (
+    RecoveryDecision,
+    RecoveryDisposition,
+)
+from app.agent.handoff.manager import HumanHandoffManager
+from app.agent.handoff.models import (
+    ControlOwner,
+    ExecutionPhase,
+    HandoffState,
+    IncidentClassification,
+    InterventionOutcome,
+    InterventionRequest,
+    InterventionResolution,
+    InterventionStatus,
+)
+from app.agent.handoff.operator import (
+    ACTION_SUMMARIES,
+    TerminalOperator,
+)
 from app.agent.replay.models import (
     ReplayActionResult,
     ReplayActionStatus,
@@ -21,26 +40,6 @@ from app.agent.schemas.capability import (
     CapabilityTarget,
 )
 from app.agent.schemas.discovery import ActionType
-from app.agent.handoff.decision import (
-    RecoveryDecision,
-    RecoveryDisposition,
-)
-from app.agent.handoff.manager import HumanHandoffManager
-from app.agent.handoff.models import (
-    ControlOwner,
-    ExecutionPhase,
-    HandoffState,
-    InterventionOutcome,
-    InterventionRequest,
-    InterventionResolution,
-    InterventionStatus,
-    IncidentClassification
-)
-from app.agent.handoff.operator import (
-    ACTION_SUMMARIES,
-    TerminalOperator,
-)
-
 
 # ---------------------------------------------------------
 # Existing model tests

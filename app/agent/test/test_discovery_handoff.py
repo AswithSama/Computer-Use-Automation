@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import app.agent.discovery.discovery_agent as discovery_module
 import app.agent.orchestration.discovery_flow as discovery_flow_module
-from pathlib import Path
 from app.agent.discovery.discovery_agent import DiscoveryAgent
 from app.agent.handoff.manager import HumanHandoffManager
 from app.agent.handoff.models import (
@@ -19,7 +20,6 @@ from app.agent.validation.value_validator_llm import (
     ValidatorDecision,
     ValidatorLLMResult,
 )
-
 
 # =========================================================
 # Shared browser fakes

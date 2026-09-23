@@ -7,7 +7,6 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.agent.schemas.registry import StoredCapability
 
-
 EligibleCapability = tuple[Path, StoredCapability]
 
 # The orchestrator expects:

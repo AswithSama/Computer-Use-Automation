@@ -5,10 +5,8 @@ import pytest
 from app.agent.discovery.executor import ActionExecutor
 from app.agent.policy.config import load_demo_banking_config
 from app.agent.policy.engine import PolicyEngine
-from app.agent.policy.models import PolicyViolation
-from app.agent.policy.models import PolicyDecision
+from app.agent.policy.models import PolicyDecision, PolicyViolation
 from app.agent.schemas.discovery import ActionType, BrowserAction
-
 
 BASE_URL = "http://127.0.0.1:8000"
 

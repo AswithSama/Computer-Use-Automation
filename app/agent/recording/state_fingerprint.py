@@ -1,6 +1,7 @@
 import hashlib
 import re
 
+
 def normalize_observation(observation: str) -> str:
     """
     Normalize a browser observation before generating a state fingerprint.

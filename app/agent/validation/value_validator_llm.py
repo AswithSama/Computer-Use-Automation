@@ -1,9 +1,8 @@
-import json
-import os
 from enum import Enum
 
-from openai import OpenAI
 from pydantic import BaseModel, ConfigDict
+
+from app.agent.llm.client import StructuredLLMClient
 
 
 class ValidatorDecision(str, Enum):
@@ -88,16 +87,9 @@ class ValueValidatorLLM:
         self,
         business_policy: str = "",
     ):
-        self.client = OpenAI()
-
-        self.model = os.getenv(
-            "VALIDATOR_MODEL",
-            os.getenv(
-                "BROWSER_MODEL",
-                "gpt-5.6-luna",
-            ),
-        )
-
+        self.llm = StructuredLLMClient()
+        self.client = self.llm.client
+        self.model = self.llm.model
         self.business_policy = business_policy
 
     def validate(
@@ -120,23 +112,13 @@ class ValueValidatorLLM:
             ),
         }
 
-        response = self.client.responses.create(
-            model=self.model,
+        output_text = self.llm.create_json_schema(
             instructions=SYSTEM_PROMPT,
-            input=json.dumps(
-                validation_context,
-                indent=2,
-            ),
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "validator_decision",
-                    "strict": True,
-                    "schema": VALIDATOR_SCHEMA,
-                }
-            },
+            input_data=validation_context,
+            schema_name="validator_decision",
+            schema=VALIDATOR_SCHEMA,
         )
 
         return ValidatorLLMResult.model_validate_json(
-            response.output_text
+            output_text
         )

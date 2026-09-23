@@ -1,4 +1,3 @@
-import json
 from typing import Literal
 
 from openai import OpenAI
@@ -7,8 +6,12 @@ from pydantic import BaseModel, ConfigDict
 from app.agent.discovery.output_binding.output_locator import (
     OutputStructuralContext,
 )
+from app.agent.llm.client import StructuredLLMClient
 
 
+# Intentionally separate from the committed capability schema.
+# These models represent untrusted LLM proposals that must be
+# deterministically verified before becoming artifact bindings.
 class TableRowMatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -129,8 +132,12 @@ class OutputBindingLLM:
         client: OpenAI,
         model: str,
     ):
-        self.client = client
-        self.model = model
+        self.llm = StructuredLLMClient(
+            client=client,
+            model=model,
+        )
+        self.client = self.llm.client
+        self.model = self.llm.model
 
     def propose(
         self,
@@ -157,23 +164,13 @@ class OutputBindingLLM:
             },
         }
 
-        response = self.client.responses.create(
-            model=self.model,
+        output_text = self.llm.create_json_schema(
             instructions=SYSTEM_PROMPT,
-            input=json.dumps(
-                input_data,
-                indent=2,
-            ),
-            text={
-                "format": {
-                    "type": "json_schema",
-                    "name": "output_binding",
-                    "strict": True,
-                    "schema": OUTPUT_BINDING_SCHEMA,
-                }
-            },
+            input_data=input_data,
+            schema_name="output_binding",
+            schema=OUTPUT_BINDING_SCHEMA,
         )
 
         return OutputBindingProposal.model_validate_json(
-            response.output_text
+            output_text
         )

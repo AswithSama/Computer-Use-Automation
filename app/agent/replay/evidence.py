@@ -1,9 +1,9 @@
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
 from app.agent.replay.models import ReplayResult
-
 
 FAILURE_SUMMARIES = {
     "missing_required_inputs": "Required replay inputs were not supplied.",
@@ -29,6 +29,9 @@ FAILURE_SUMMARIES = {
     }
 
 
+logger = logging.getLogger(__name__)
+
+
 class ReplayEvidenceRecorder:
     """Saves replay failure evidence in the existing evidence folder."""
 
@@ -44,9 +47,9 @@ class ReplayEvidenceRecorder:
         try:
             return self._record(result, page, phase)
         except Exception:
-            print(
-                "[REPLAY] Evidence could not be saved. "
-                "The original replay failure is preserved."
+            logger.warning(
+                "Replay evidence could not be saved; "
+                "the original replay failure is preserved."
             )
             return []
 
@@ -128,13 +131,13 @@ class ReplayEvidenceRecorder:
         try:
             self._write_json(report_path, report)
         except Exception:
-            print(
-                "[REPLAY] Failure report could not be saved. "
-                "The original replay failure is preserved."
+            logger.warning(
+                "Replay failure report could not be saved; "
+                "the original replay failure is preserved."
             )
             return refs
 
-        print(f"[REPLAY] Failure report saved: {report_path}")
+        logger.info("Replay failure report saved: %s", report_path)
 
         return [str(report_path), *refs]
 

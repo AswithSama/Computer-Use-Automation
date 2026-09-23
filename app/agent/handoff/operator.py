@@ -9,7 +9,6 @@ from app.agent.handoff.models import (
     InterventionResolution,
 )
 
-
 # Controlled descriptions are safe to persist as operator-reported actions.
 # These are declarations, not independently verified browser events.
 ACTION_SUMMARIES = {

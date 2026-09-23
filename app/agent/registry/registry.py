@@ -11,7 +11,6 @@ from app.agent.schemas.registry import (
     StoredCapability,
 )
 
-
 logger = logging.getLogger(__name__)
 
 

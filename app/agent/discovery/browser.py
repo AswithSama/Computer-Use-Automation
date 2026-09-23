@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from urllib.parse import urlparse
 from uuid import UUID
+
 from playwright.sync_api import sync_playwright
 
 

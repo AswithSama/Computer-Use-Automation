@@ -1,7 +1,7 @@
 {
   "tenant_id": "demo_tenant",
   "app_id": "demo_banking_app",
-  "approval_status": "draft",
+  "approval_status": "approved",
   "version": 1,
   "artifact": {
     "schema_version": "1.0",
@@ -12,7 +12,7 @@
         "name": "member_id",
         "type": "string",
         "required": true,
-        "description": "Member ID entered into the Member ID field to search for the member's accounts and balances."
+        "description": "Member ID entered into the Member ID field to identify the account."
       }
     ],
     "actions": [
@@ -20,7 +20,7 @@
         "action": "click",
         "target": {
           "role": "link",
-          "name": "01 Member Search Locate a member by member ID and review linked accounts."
+          "name": "◉ Members"
         },
         "value": null,
         "url": null
@@ -83,6 +83,18 @@
           "value_column": "Current Balance"
         }
       }
+    ]
+  },
+  "selection_context": {
+    "use_when": "When the task is to retrieve the current savings account balance for a specific member and you have the member's ID (member_id) to identify their account.",
+    "workflow_summary": "Search for and open the member record using the provided member ID, then extract the current balance for the member's Savings account.",
+    "example_goals": [
+      "Get the savings balance for member 67890",
+      "Show the savings balance for member 67890",
+      "Retrieve the current savings balance for member 67890",
+      "What is the savings account balance for member 67890?",
+      "Provide the current balance of the Savings account for member 67890",
+      "Find the current savings balance for member ID 67890"
     ]
   },
   "business_outcome_rules": [

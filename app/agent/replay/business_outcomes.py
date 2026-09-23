@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-from typing import Literal
 from urllib.parse import urlparse
-
 
 # Data lives in schemas so registry/capability can use it
 # without importing the replay package.
-from app.agent.schemas.outcomes import BusinessOutcomeRule  # noqa: F401
+from app.agent.schemas.outcomes import BusinessOutcomeRule
+
 
 class BusinessOutcomeDetector:
 

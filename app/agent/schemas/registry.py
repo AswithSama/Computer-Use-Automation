@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.agent.schemas.capability import CapabilityArtifact
 from app.agent.schemas.outcomes import BusinessOutcomeRule
 
-
 ApprovalStatus = Literal["draft", "approved", "rejected"]
 
 class SelectionContext(BaseModel):

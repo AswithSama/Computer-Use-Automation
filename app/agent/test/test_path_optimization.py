@@ -7,15 +7,14 @@ import app.agent.orchestration.path_optimization as optimization
 from app.agent.orchestration.candidate_path_verifier import (
     VerifiedCandidatePath,
 )
+from app.agent.recording.state_fingerprint import (
+    build_state_fingerprint,
+)
 from app.agent.schemas.discovery import ActionType, BrowserAction
 from app.agent.schemas.recording import (
     RecordedState,
     RecordedTransition,
 )
-from app.agent.recording.state_fingerprint import (
-    build_state_fingerprint,
-)
-
 
 URL = "http://127.0.0.1:8000/demo"
 

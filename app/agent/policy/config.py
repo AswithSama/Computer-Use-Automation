@@ -4,7 +4,6 @@ from pathlib import Path
 
 from app.agent.policy.models import AllowlistConfig
 
-
 _DEMO_BANKING_POLICY_PATH = (
     Path(__file__).resolve().parent / "demo_banking.json"
 )

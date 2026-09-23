@@ -1,7 +1,11 @@
+import logging
 from collections.abc import Callable
 
-from app.agent.registry.registry import CapabilityRegistry
 from app.agent.orchestration.capability_selector import CapabilitySelector
+from app.agent.registry.registry import CapabilityRegistry
+
+
+logger = logging.getLogger(__name__)
 
 
 class Orchestrator:
@@ -17,17 +21,17 @@ class Orchestrator:
         selection = self.selector.select(user_request=user_request,eligible=eligible,)
 
         if selection is None:
-            print("[ORCHESTRATOR] No matching approved capability. Starting discovery.")
+            logger.info("No matching approved capability. Starting discovery.")
             return self.run_discovery(user_request)
 
         (selected_path, stored), inputs = selection
 
-        print(
-            "[ORCHESTRATOR] Reusing approved capability: "
-            f"{stored.artifact.capability_id} "
-            f"v{stored.version}"
+        logger.info(
+            "Reusing approved capability: %s v%s",
+            stored.artifact.capability_id,
+            stored.version,
         )
-        print(f"[ORCHESTRATOR] Loaded from: {selected_path}")
+        logger.debug("Capability loaded from: %s", selected_path)
 
         return self.run_replay(
             artifact=stored.artifact,

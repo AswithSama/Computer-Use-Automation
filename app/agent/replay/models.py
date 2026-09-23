@@ -2,6 +2,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+
 class ReplayActionStatus(str, Enum):
     SUCCESS = "success"
     INVALID_ACTION = "invalid_action"

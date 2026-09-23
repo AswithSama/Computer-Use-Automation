@@ -1,9 +1,12 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
+
 from app.agent.schemas.discovery import (
     BrowserAction,
     DiscoveredOutput,
 )
-from typing import Literal
+
 
 class RecordedState(BaseModel):
     model_config = ConfigDict(extra="forbid")

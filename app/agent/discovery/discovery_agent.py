@@ -1,9 +1,12 @@
+import logging
 from urllib.parse import urlparse
 
 from app.agent.discovery.browser import BrowserSession
 from app.agent.discovery.executor import ActionExecutor
 from app.agent.discovery.output_binding.output_binding_llm import OutputBindingLLM
-from app.agent.discovery.output_binding.output_binding_verifier import OutputBindingVerifier
+from app.agent.discovery.output_binding.output_binding_verifier import (
+    OutputBindingVerifier,
+)
 from app.agent.discovery.output_binding.output_grounder import OutputGrounder
 from app.agent.discovery.output_binding.output_locator import OutputLocatorBuilder
 from app.agent.discovery.runtime import DiscoveryRunState, HandoffCoordinator
@@ -16,8 +19,8 @@ from app.agent.recording.state_fingerprint import build_state_fingerprint
 from app.agent.recording.trajectory_recorder import TrajectoryRecorder
 from app.agent.schemas.discovery import ActionType
 from app.agent.schemas.recording import (
-    DiscoveryResult,
     DiscoveredOutputLocation,
+    DiscoveryResult,
     RecordedState,
     RecordedTransition,
     TableRowMatchBinding,
@@ -25,7 +28,13 @@ from app.agent.schemas.recording import (
 )
 from app.agent.validation.outcome_validator import OutcomeValidator
 from app.agent.validation.validator import ActionValidator, ValidationStatus
-from app.agent.validation.value_validator_llm import ValueValidatorLLM, ValidatorDecision
+from app.agent.validation.value_validator_llm import (
+    ValidatorDecision,
+    ValueValidatorLLM,
+)
+
+
+logger = logging.getLogger(__name__)
 
 
 class DiscoveryAgent:
@@ -149,7 +158,7 @@ class DiscoveryAgent:
     def _step_loop(self, runtime, user_request: str, target_url: str):
         for step in range(1, self.max_steps + 1):
             runtime["state"].current_step = step
-            print(f"\n========== STEP {step} ==========")
+            logger.debug("Discovery step %s", step)
             observation, current_url = self._observe(runtime, step)
             action = self._decide(runtime, user_request, current_url, observation, step)
 
@@ -172,7 +181,7 @@ class DiscoveryAgent:
             if decision == "retry":
                 continue
 
-            print("\nAction approved.")
+            logger.debug("Action approved.")
 
             if action.action == ActionType.FINISH:
                 result = self._handle_finish(
@@ -204,7 +213,7 @@ class DiscoveryAgent:
             if execution_status == "retry":
                 continue
 
-        print("\nMaximum step limit reached.")
+        logger.warning("Maximum step limit reached.")
         runtime["logger"].log(
             "run_failed",
             reason="maximum_step_limit_reached",
@@ -224,8 +233,7 @@ class DiscoveryAgent:
             )
             state.recorder_initialized = True
 
-        print("\nCurrent URL:")
-        print(current_url)
+        logger.debug("Current URL: %s", current_url)
         runtime["logger"].log(
             "observation",
             step=step,
@@ -241,8 +249,16 @@ class DiscoveryAgent:
             current_url=current_url,
             observation=observation,
         )
-        print("\nLLM decision:")
-        print(action.model_dump_json(indent=2))
+        target = action.target_name or action.target_role or action.target_ref or ""
+        logger.debug(
+            "Decision: %s%s",
+            action.action.value.upper(),
+            f' "{target}"' if target else "",
+        )
+        logger.debug(
+            "Full LLM decision: %s",
+            action.model_dump_json(),
+        )
         runtime["logger"].log(
             "llm_action",
             step=step,
@@ -268,9 +284,14 @@ class DiscoveryAgent:
             previous_actions=state.action_history,
         )
 
-        print("\nDeterministic validation:")
-        print(validation.status.value)
-        print(validation.reason)
+        logger.debug(
+            "Validation: %s",
+            validation.status.value.upper(),
+        )
+        logger.debug(
+            "Validation reason: %s",
+            validation.reason,
+        )
         runtime["logger"].log(
             "deterministic_validation",
             step=step,
@@ -290,8 +311,9 @@ class DiscoveryAgent:
         if validation.status != ValidationStatus.NEEDS_LLM:
             return "approved"
 
-        print("\nDeterministic validation was inconclusive.")
-        print("Sending action to Validator LLM...")
+        logger.info(
+            "Deterministic validation inconclusive; using Validator LLM."
+        )
         llm_validation = runtime["value_validator_llm"].validate(
             user_request=user_request,
             action=action,
@@ -299,9 +321,14 @@ class DiscoveryAgent:
             deterministic_reason=validation.reason,
         )
 
-        print("\nValidator LLM decision:")
-        print(llm_validation.decision.value)
-        print(llm_validation.reason)
+        logger.info(
+            "Validator LLM: %s",
+            llm_validation.decision.value.upper(),
+        )
+        logger.debug(
+            "Validator LLM reason: %s",
+            llm_validation.reason,
+        )
         runtime["logger"].log(
             "validator_llm",
             step=step,
@@ -333,7 +360,11 @@ class DiscoveryAgent:
     def _record_rejection(self, runtime, *, step: int, source: str, reason: str) -> None:
         state = runtime["state"]
         state.failure_count += 1
-        print(f"\nAction rejected ({state.failure_count}/{self.max_failures})")
+        logger.warning(
+            "Action rejected (%s/%s).",
+            state.failure_count,
+            self.max_failures,
+        )
         runtime["logger"].log(
             "action_rejected",
             step=step,
@@ -346,7 +377,7 @@ class DiscoveryAgent:
         state = runtime["state"]
         if not action.result:
             state.failure_count += 1
-            print("\nRejected: finish action did not contain a result.")
+            logger.warning("Finish action rejected: missing result.")
             runtime["logger"].log(
                 "finish_rejected",
                 step=step,
@@ -454,9 +485,14 @@ class DiscoveryAgent:
                 after_observation=after_observation,
             )
 
-            print("\nPost-action validation:")
-            print(outcome.success)
-            print(outcome.reason)
+            logger.debug(
+                "Execution: %s",
+                "SUCCESS" if outcome.success else "INVALID",
+            )
+            logger.debug(
+                "Outcome reason: %s",
+                outcome.reason,
+            )
             runtime["logger"].log(
                 "outcome_validation",
                 step=step,
@@ -468,9 +504,10 @@ class DiscoveryAgent:
 
             if not outcome.success:
                 state.failure_count += 1
-                print(
-                    f"\nAction produced an invalid outcome "
-                    f"({state.failure_count}/{self.max_failures})"
+                logger.warning(
+                    "Action produced an invalid outcome (%s/%s).",
+                    state.failure_count,
+                    self.max_failures,
                 )
                 runtime["logger"].log(
                     "invalid_outcome",
@@ -498,22 +535,31 @@ class DiscoveryAgent:
             else:
                 runtime["trajectory_recorder"].record_transition(transition)
 
-            print("\nRecorded execution trace:")
-            for recorded in (
+            execution_trace = (
                 runtime["trajectory_recorder"].get_execution_trace()
                 + state.assisted_execution_trace
-            ):
-                print(f"Step {recorded.step}: {recorded.action.action.value}")
+            )
+            logger.debug(
+                "Execution trace: %s",
+                [
+                    (recorded.step, recorded.action.action.value)
+                    for recorded in execution_trace
+                ],
+            )
 
-            print("\nCurrent candidate path:")
             if state.human_assisted:
-                print(
-                    "[DISCOVERY] Assisted run: no autonomous "
-                    "candidate path will be emitted."
+                logger.info(
+                    "Assisted run: no autonomous candidate path will be emitted."
                 )
             else:
-                for recorded in runtime["trajectory_recorder"].get_candidate_path():
-                    print(f"Step {recorded.step}: {recorded.action.action.value}")
+                candidate_path = runtime["trajectory_recorder"].get_candidate_path()
+                logger.debug(
+                    "Candidate path: %s",
+                    [
+                        (recorded.step, recorded.action.action.value)
+                        for recorded in candidate_path
+                    ],
+                )
 
             return "ok"
 
@@ -526,16 +572,24 @@ class DiscoveryAgent:
                 error_code=exc.result.code,
                 reason=exc.result.reason,
             )
-            print(
-                "[DISCOVERY] Action blocked by policy: "
-                f"{exc.result.code}"
+            logger.error(
+                "Action blocked by policy: %s",
+                exc.result.code,
             )
             return "stop"
 
         except Exception as exc:
             state.failure_count += 1
-            print(f"\nAction failed ({state.failure_count}/{self.max_failures}):")
-            print(exc)
+            logger.error(
+                "Action failed (%s/%s): %s",
+                state.failure_count,
+                self.max_failures,
+                type(exc).__name__,
+            )
+            logger.debug(
+                "Action execution exception.",
+                exc_info=True,
+            )
             runtime["logger"].log(
                 "execution_error",
                 step=step,
@@ -618,7 +672,7 @@ class DiscoveryAgent:
         if state.failure_count < self.max_failures:
             return False
 
-        print("\nMaximum failure threshold reached.")
+        logger.error("Maximum failure threshold reached.")
         runtime["logger"].log(
             "run_failed",
             step=step,
