@@ -63,6 +63,7 @@ class CapabilityCompiler:
         outputs = self.compile_outputs(
             context=context,
             output_locations=output_locations,
+            extracted_inputs=extracted_inputs,
         )
 
         return CapabilityArtifact(
@@ -251,6 +252,7 @@ class CapabilityCompiler:
         self,
         context: CapabilityContext,
         output_locations: list[DiscoveredOutputLocation],
+        extracted_inputs: InputExtractionResult | None = None,
     ) -> list[CapabilityOutput]:
 
         # Match each semantic output with the verified
@@ -284,6 +286,28 @@ class CapabilityCompiler:
                     f"binding kind: '{binding.kind}'."
                 )
 
+            row_match_value = binding.row_match.value
+            observed_matches = [
+                candidate
+                for candidate in (
+                    extracted_inputs.inputs if extracted_inputs is not None else []
+                )
+                if candidate.observed_value == row_match_value
+            ]
+            if len(observed_matches) > 1:
+                raise ValueError(
+                    "Row identity matches multiple runtime input parameters."
+                )
+            if observed_matches:
+                row_match_value = f"{{{{{observed_matches[0].name}}}}}"
+            elif (
+                binding.row_match.column == binding.value_column
+                and binding.row_match.value == location.observed_value
+            ):
+                raise ValueError(
+                    "An output value cannot identify its own row across replay."
+                )
+
             compiled_outputs.append(
                 CapabilityOutput(
                     name=output.name,
@@ -292,7 +316,7 @@ class CapabilityCompiler:
                         kind="table",
                         row_match=TableRowMatch(
                             column=binding.row_match.column,
-                            value=binding.row_match.value,
+                            value=row_match_value,
                         ),
                         value_column=binding.value_column,
                     ),

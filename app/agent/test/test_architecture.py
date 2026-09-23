@@ -45,7 +45,8 @@ ALLOWED = {
         "registry",
         "replay",
         "schemas",
-        "recording"
+        "recording",
+        "console"
     },
     "policy": {"schemas"},
 }

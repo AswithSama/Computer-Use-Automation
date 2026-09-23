@@ -37,4 +37,11 @@ class Orchestrator:
             artifact=stored.artifact,
             business_outcome_rules=tuple(stored.business_outcome_rules),
             inputs=inputs,
+            # Only the registry's approved record can authorize use of the
+            # trusted generic read-only replay policy for new capability IDs.
+            policy_profile_id=(
+                "get_savings_balance"
+                if stored.artifact.capability_id == "get_savings_balance"
+                else "read_only_replay"
+            ),
         )

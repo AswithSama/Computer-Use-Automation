@@ -246,6 +246,7 @@ class ReplayFlow:
         artifact,
         business_outcome_rules,
         inputs,
+        policy_profile_id: str | None = None,
     ):
         section("REPLAY")
         field("Capability", artifact.capability_id)
@@ -371,7 +372,9 @@ class ReplayFlow:
                 ),
                 max_interventions=self.max_interventions,
                 policy_engine=self.policy_engine,
-                policy_profile_id=artifact.capability_id,
+                policy_profile_id=(
+                    policy_profile_id or artifact.capability_id
+                ),
             )
 
             if os.getenv("HANDOFF_DEMO") == "1":

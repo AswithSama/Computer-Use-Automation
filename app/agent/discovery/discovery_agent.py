@@ -1,5 +1,8 @@
+import json
 import logging
+from pathlib import Path
 from urllib.parse import urlparse
+from uuid import uuid4
 
 from app.agent.discovery.browser import BrowserSession
 from app.agent.discovery.executor import ActionExecutor
@@ -115,6 +118,7 @@ class DiscoveryAgent:
             "output_locator_builder": OutputLocatorBuilder(),
             "state": state,
             "executor": None,
+            "binding_review_refs": [],
         }
         runtime["handoff"] = HandoffCoordinator(
             browser=browser,
@@ -185,7 +189,7 @@ class DiscoveryAgent:
 
             if action.action == ActionType.FINISH:
                 result = self._handle_finish(
-                    runtime, action, current_url=current_url, step=step
+                    runtime, action, user_request=user_request, current_url=current_url, step=step
                 )
                 if result is not None:
                     return result
@@ -373,7 +377,7 @@ class DiscoveryAgent:
             failure_count=state.failure_count,
         )
 
-    def _handle_finish(self, runtime, action, *, current_url: str, step: int):
+    def _handle_finish(self, runtime, action, *, user_request: str,current_url: str, step: int):
         state = runtime["state"]
         if not action.result:
             state.failure_count += 1
@@ -391,7 +395,7 @@ class DiscoveryAgent:
         if not self._check_policy_scope(runtime, step=step, url=current_url):
             return None
         final_url = browser.page.url
-        output_locations = self._build_output_locations(runtime, action)
+        output_locations = self._build_output_locations(runtime, action, user_request=user_request,)
         final_state = self._recorded_state(final_url, final_observation)
 
         return DiscoveryResult(
@@ -411,11 +415,15 @@ class DiscoveryAgent:
             final_state=final_state,
             human_assisted=state.human_assisted,
             intervention_count=state.intervention_count,
-            evidence_refs=list(state.intervention_evidence),
+            evidence_refs=[
+                *state.intervention_evidence,
+                *runtime["binding_review_refs"],
+            ],
         )
 
     @staticmethod
-    def _build_output_locations(runtime, action):
+    def _build_output_locations(runtime, action, *, user_request: str,):
+        """Keep failed binding evidence reviewable, never silently accept it."""
         browser = runtime["browser"]
         binding_llm = OutputBindingLLM(
             client=runtime["llm"].client,
@@ -423,41 +431,101 @@ class DiscoveryAgent:
         )
         binding_verifier = OutputBindingVerifier()
         locations = []
+        input_evidence = [
+            {"field": transition.action.target_name or "",
+             "value": transition.action.value}
+            for transition in runtime["trajectory_recorder"].get_candidate_path()
+            if transition.action.action == ActionType.FILL
+            and transition.action.value is not None
+        ]
 
         for output in action.outputs or []:
-            location = runtime["output_locator_builder"].locate(
-                output=output,
-                page=browser.page,
-            )
-            proposal = binding_llm.propose(context=location)
-            verification = binding_verifier.verify(
-                context=location,
-                proposal=proposal,
-                page=browser.page,
-            )
-
-            if not verification.valid:
-                raise ValueError(
-                    f"Output binding verification failed for "
-                    f"'{location.output_name}': {verification.reason}"
+            location = None
+            proposal = None
+            try:
+                location = runtime["output_locator_builder"].locate(
+                    output=output,
+                    page=browser.page,
                 )
+                proposal = binding_llm.propose(
+                    context=location,
+                    user_request=user_request,
+                    input_evidence=input_evidence,
+                )
+                verification = binding_verifier.verify(
+                    context=location,
+                    proposal=proposal,
+                    page=browser.page,
+                )
+                if not verification.valid:
+                    raise ValueError(verification.reason)
 
-            binding = proposal.binding
-            locations.append(
-                DiscoveredOutputLocation(
-                    output_name=location.output_name,
-                    output_type=location.output_type,
-                    observed_value=location.observed_value,
-                    binding=VerifiedTableOutputBinding(
-                        kind="table",
-                        row_match=TableRowMatchBinding(
-                            column=binding.row_match.column,
-                            value=binding.row_match.value,
+                binding = proposal.binding
+                locations.append(
+                    DiscoveredOutputLocation(
+                        output_name=location.output_name,
+                        output_type=location.output_type,
+                        observed_value=location.observed_value,
+                        binding=VerifiedTableOutputBinding(
+                            kind="table",
+                            row_match=TableRowMatchBinding(
+                                column=binding.row_match.column,
+                                value=binding.row_match.value,
+                            ),
+                            value_column=binding.value_column,
                         ),
-                        value_column=binding.value_column,
-                    ),
+                    )
                 )
-            )
+            except Exception as exc:
+                # This is diagnostic evidence, NOT a capability artifact.
+                # The demo website uses synthetic data. Production use must
+                # redact sensitive DOM content before persisting review data.
+                review_dir = Path("evidence") / "binding_reviews"
+                review_dir.mkdir(parents=True, exist_ok=True)
+                review_path = review_dir / f"binding_review_{uuid4().hex}.json"
+                # Raw row text is retained only for the synthetic local demo.
+                # For external applications, avoid persistent page values.
+                local_demo = urlparse(browser.page.url).hostname in {
+                    "127.0.0.1", "localhost", "::1"
+                }
+                review = {
+                    "status": "needs_binding_review",
+                    "replayable": False,
+                    "output_name": output.name,
+                    "output_type": output.type,
+                    "component": location.structure if location else "unresolved",
+                    "headers": location.headers if location else None,
+                    "containing_row": (
+                        location.containing_row if location and local_demo else None
+                    ),
+                    "output_column": location.output_column if location else None,
+                    "proposed_binding": (
+                        proposal.model_dump(mode="json")
+                        if proposal and local_demo else None
+                    ),
+                    "verification_error": (
+                        str(exc) if local_demo else type(exc).__name__
+                    ),
+                    "discovery_log": str(runtime["logger"].log_path),
+                }
+                review_path.write_text(
+                    json.dumps(review, indent=2, ensure_ascii=False) + "\n",
+                    encoding="utf-8",
+                )
+                runtime["binding_review_refs"].append(str(review_path))
+                runtime["logger"].log(
+                    "binding_review_required",
+                    output_name=output.name,
+                    review_path=str(review_path),
+                    reason=type(exc).__name__,
+                )
+                logger.warning(
+                    "Output binding for %s needs review; no draft will be saved. "
+                    "Review evidence: %s",
+                    output.name,
+                    review_path,
+                )
+                return []
         return locations
 
     def _execute_action(self, runtime, action, observation, step: int) -> str:

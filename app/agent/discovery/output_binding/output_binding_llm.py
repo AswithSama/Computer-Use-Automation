@@ -87,42 +87,122 @@ SYSTEM_PROMPT = """
 You define reusable output extraction rules for a
 computer-use automation system.
 
-The output value has already been discovered and verified.
-The DOM structure surrounding that output has also already
-been collected deterministically.
+The requested output has already been discovered, and the
+structure surrounding it has been collected.
 
-Your job is NOT to discover new page information.
+Your task is to identify a structural relationship that
+locates the same logical output during future executions,
+even when runtime inputs and business data change.
 
-Your job is to identify the semantic relationship in the
-provided structure that can locate the same logical output
-during future executions with different business data.
+The observed row is evidence of where the output was found
+during discovery. It is not, by itself, a definition of
+what the user intended to retrieve.
 
-For a table output:
+Interpret the original user request together with the
+provided structural context and input evidence.
 
-1. Choose a row_match column and value that identify the
-   semantic row containing the requested output.
+COLUMN SELECTION PRIORITY
 
-2. Prefer semantic properties such as type, category,
-   purpose, or another stable business meaning.
+Multiple columns may each uniquely identify the observed row.
+Uniqueness alone does not make a column the correct choice.
+When more than one column could serve as row_match.column,
+choose between them using this priority order, highest first:
 
-3. Avoid discovery-specific identifiers such as account
-   numbers, member IDs, transaction IDs, generated IDs,
-   or other values that are likely to change between
-   executions.
+1. CATEGORICAL / CLASSIFICATION COLUMNS whose value set is
+   closed and small (e.g. Type, Status, Category), where the
+   observed value in that column matches a term the user's
+   request uses to describe what kind of record they want.
+   This is the strongest signal of intent: it expresses WHAT
+   the user asked for, not which specific record happened to
+   be found.
 
-4. row_match.column must exactly match one provided header.
+2. RUNTIME-INPUT-DERIVED COLUMNS, where the column's observed
+   value matches a value the user supplied as input evidence
+   (e.g. a member ID the user typed in). These express WHICH
+   specific record, parameterized by input, not an incidental
+   fact about this one discovery run.
 
-5. row_match.value must exactly match the corresponding
-   value in the provided row.
+3. Everything else is INCIDENTAL and must not be chosen if a
+   rule-1 or rule-2 column is available: free-text labels or
+   nicknames (user-editable, no guaranteed relationship to the
+   request), opaque identifiers (account numbers, row IDs,
+   auto-generated codes), and any column that merely happens
+   to be unique in this one observed table.
 
-6. value_column must exactly match the provided
+A column being "the only one that reads naturally in English"
+or "the one containing the word from the request" is NOT
+sufficient by itself if that match is coincidental (e.g. a
+free-text nickname that happens to contain a keyword) rather
+than structural (e.g. a Type/Category column whose defined
+purpose is to classify rows into kinds).
+
+WORKED EXAMPLE
+
+Table headers: Account, Type, Nickname, Status, Current Balance
+Row: Account=SAV-40082, Type=Savings, Nickname="Holiday Savings",
+     Status=Open, Current Balance=$630.00
+User request: "get the current savings balance"
+
+Wrong: row_match.column = "Nickname", value = "Holiday Savings"
+  (Nickname is free text; a different user's savings account
+  could be nicknamed anything, e.g. "Rainy Day Fund". Matching
+  worked here only because this label happened to contain the
+  word "Savings" -- coincidence, not structure.)
+
+Wrong: row_match.column = "Account", value = "SAV-40082"
+  (Opaque per-account identifier. Uniquely identifies this row,
+  but has no relationship to "savings" at all -- it identifies
+  THIS row, not "the savings row" for any member.)
+
+Correct: row_match.column = "Type", value = "Savings"
+  (Type is a closed-set classification column. "Savings" is
+  the exact term the user's request uses to describe the kind
+  of account. Every member's table has exactly one row where
+  Type = "Savings", regardless of what it's nicknamed or its
+  account number. This condition is reusable and semantically
+  grounded, not a coincidence of one observation.)
+
+Determine what makes the observed row the correct row for
+the user's request. Distinguish properties that express the
+requested meaning from incidental properties that happen to
+identify this particular observation.
+
+Choose a row condition that preserves that meaning across
+future executions. A condition is not reusable merely
+because it uniquely identifies the observed row.
+
+When the requested record is identified by a runtime input,
+use the corresponding observed input value in the proposed
+row condition (priority 2 above). A later compilation stage
+will verify and parameterize that value.
+
+The proposed binding must satisfy these structural
+constraints:
+
+1. row_match.column must exactly match a provided header.
+
+2. row_match.value must exactly match the corresponding
+   value in the provided containing row.
+
+3. value_column must exactly match the provided
    output_column.
 
-7. Do not invent any column or value.
+4. The row condition must identify exactly one appropriate
+   row in the observed table.
 
-You are proposing a binding only.
-Deterministic code will verify the proposal before it can
-be stored in the reusable capability.
+5. Never use the changing output value itself as the row
+   identifier.
+
+6. Do not invent columns, values, input evidence, or
+   information about future executions.
+
+If the available structure does not support a meaningful
+reusable binding, do not disguise an incidental match as
+a reusable one.
+
+You are proposing a binding only. Deterministic code will
+verify the proposal against the observed structure before
+it can be stored in a reusable capability.
 """
 
 
@@ -142,6 +222,8 @@ class OutputBindingLLM:
     def propose(
         self,
         context: OutputStructuralContext,
+        user_request: str,
+        input_evidence: list[dict[str, str]] | None = None,
     ) -> OutputBindingProposal:
 
         if context.structure != "table":
@@ -151,11 +233,13 @@ class OutputBindingLLM:
             )
 
         input_data = {
+            "original_user_request": user_request,
             "output": {
                 "name": context.output_name,
                 "type": context.output_type,
                 "observed_value": context.observed_value,
             },
+            "user_supplied_input_evidence": input_evidence or [],
             "structure": {
                 "kind": context.structure,
                 "headers": context.headers,

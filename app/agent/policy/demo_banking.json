@@ -49,6 +49,24 @@
         "click",
         "fill"
       ]
+    },
+    "read_only_replay": {
+      "allowed_routes": [
+        "/",
+        "/members",
+        "/members/*",
+        "/accounts"
+      ],
+      "allowed_actions": [
+        "click",
+        "fill",
+        "navigate",
+        "wait"
+      ],
+      "blocked_routes": [
+        "/operations",
+        "/operations/*"
+      ]
     }
   }
 }

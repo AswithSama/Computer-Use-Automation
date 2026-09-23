@@ -1,0 +1,101 @@
+{
+  "tenant_id": "demo_tenant",
+  "app_id": "demo_banking_app",
+  "approval_status": "approved",
+  "version": 1,
+  "artifact": {
+    "schema_version": "1.0",
+    "capability_id": "get_member_email",
+    "description": "Retrieve a member's email address given their member_id. Outputs member_email (string).",
+    "inputs": [
+      {
+        "name": "member_id",
+        "type": "string",
+        "required": true,
+        "description": "Member ID entered into the Member ID textbox to search for the member."
+      }
+    ],
+    "actions": [
+      {
+        "action": "click",
+        "target": {
+          "role": "link",
+          "name": "◉ Members"
+        },
+        "value": null,
+        "url": null
+      },
+      {
+        "action": "fill",
+        "target": {
+          "role": "textbox",
+          "name": "Member ID"
+        },
+        "value": "{{member_id}}",
+        "url": null
+      },
+      {
+        "action": "click",
+        "target": {
+          "role": "button",
+          "name": "Search"
+        },
+        "value": null,
+        "url": null
+      },
+      {
+        "action": "click",
+        "target": {
+          "role": "link",
+          "name": "Open Member"
+        },
+        "value": null,
+        "url": null
+      }
+    ],
+    "checkpoints": [
+      {
+        "after_action": 1,
+        "url_pattern": "/members",
+        "required_text": []
+      },
+      {
+        "after_action": 3,
+        "url_pattern": "/members?member_id={{member_id}}",
+        "required_text": []
+      },
+      {
+        "after_action": 4,
+        "url_pattern": "/members/{{member_id}}",
+        "required_text": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "member_email",
+        "type": "string",
+        "binding": {
+          "kind": "table",
+          "row_match": {
+            "column": "Field",
+            "value": "Email"
+          },
+          "value_column": "Value"
+        }
+      }
+    ]
+  },
+  "selection_context": {
+    "use_when": "When you have a specific member_id and need to retrieve that member's email address from their member record.",
+    "workflow_summary": "Search for the member using the provided member_id, open the member's record, and extract the Email field as member_email.",
+    "example_goals": [
+      "Get the email address of member 12345",
+      "Find the email for member 12345",
+      "What is member 12345's email?",
+      "Retrieve the email address for member 12345",
+      "Lookup member 12345's email address",
+      "Show me the email for member 12345"
+    ]
+  },
+  "business_outcome_rules": []
+}

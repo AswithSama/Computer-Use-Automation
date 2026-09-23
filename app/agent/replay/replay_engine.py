@@ -222,6 +222,7 @@ class ReplayEngine:
             )
 
         return verify
+    
     def _policy_failure(
         self,
         *,
@@ -235,6 +236,13 @@ class ReplayEngine:
         else:
             error_code = "policy_blocked"
 
+        logger.warning(
+            "Replay policy decision: code=%s | decision=%s | failed_step=%s",
+            result.code,
+            result.decision.value,
+            failed_step,
+        )
+
         return self._record_failure(
             ReplayResult(
                 status=ReplayStatus.HARD_FAILURE,
@@ -247,8 +255,6 @@ class ReplayEngine:
             ),
             phase="policy",
         )
-
-
     def _check_policy_scope(
         self,
         *,
@@ -621,7 +627,7 @@ class ReplayEngine:
             completed_steps=completed_steps,
         )
 
-    def _extract_outputs(self, *, artifact, completed_steps: int):
+    def _extract_outputs(self, *, artifact, completed_steps: int, inputs):
         outputs: dict[str, str] = {}
 
         logger.info("Extracting replay outputs.")
@@ -654,9 +660,26 @@ class ReplayEngine:
                 )
 
             try:
+                row_match_value = self.resolver._resolve_text(
+                    binding.row_match.value,
+                    inputs,
+                )
+            except ParameterResolutionError:
+                return self._record_failure(
+                    ReplayResult(
+                        status=ReplayStatus.HARD_FAILURE,
+                        failure_category=ReplayFailureCategory.INPUT,
+                        reason="An output binding references an unavailable input.",
+                        completed_steps=completed_steps,
+                        error_code="parameter_resolution_error",
+                    ),
+                    phase="output",
+                )
+
+            try:
                 values = self._extract_table_output(
                     row_match_column=binding.row_match.column,
-                    row_match_value=binding.row_match.value,
+                    row_match_value=row_match_value,
                     value_column=binding.value_column,
                 )
 
@@ -741,6 +764,7 @@ class ReplayEngine:
         return self._extract_outputs(
             artifact=artifact,
             completed_steps=completed_steps,
+            inputs=inputs,
         )
 
     def _extract_table_output(

@@ -42,6 +42,8 @@ class CapabilityContext(BaseModel):
 RELEVANT_INTERACTION_ACTIONS = {
     ActionType.CLICK,
     ActionType.FILL,
+    ActionType.NAVIGATE,
+    ActionType.WAIT,
 }
 
 

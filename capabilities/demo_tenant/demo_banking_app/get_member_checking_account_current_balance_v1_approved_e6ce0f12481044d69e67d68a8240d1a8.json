@@ -1,0 +1,100 @@
+{
+  "tenant_id": "demo_tenant",
+  "app_id": "demo_banking_app",
+  "approval_status": "approved",
+  "version": 1,
+  "artifact": {
+    "schema_version": "1.0",
+    "capability_id": "get_member_checking_account_current_balance",
+    "description": "Retrieve the current balance of a member's checking account. Input: member_id. Output: checking_account_current_balance (currency).",
+    "inputs": [
+      {
+        "name": "member_id",
+        "type": "string",
+        "required": true,
+        "description": "Member ID entered into the Member ID field to search for the member record."
+      }
+    ],
+    "actions": [
+      {
+        "action": "click",
+        "target": {
+          "role": "link",
+          "name": "◉ Members"
+        },
+        "value": null,
+        "url": null
+      },
+      {
+        "action": "fill",
+        "target": {
+          "role": "textbox",
+          "name": "Member ID"
+        },
+        "value": "{{member_id}}",
+        "url": null
+      },
+      {
+        "action": "click",
+        "target": {
+          "role": "button",
+          "name": "Search"
+        },
+        "value": null,
+        "url": null
+      },
+      {
+        "action": "click",
+        "target": {
+          "role": "link",
+          "name": "Open Member"
+        },
+        "value": null,
+        "url": null
+      }
+    ],
+    "checkpoints": [
+      {
+        "after_action": 1,
+        "url_pattern": "/members",
+        "required_text": []
+      },
+      {
+        "after_action": 3,
+        "url_pattern": "/members?member_id={{member_id}}",
+        "required_text": []
+      },
+      {
+        "after_action": 4,
+        "url_pattern": "/members/{{member_id}}",
+        "required_text": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "checking_account_current_balance",
+        "type": "currency",
+        "binding": {
+          "kind": "table",
+          "row_match": {
+            "column": "Type",
+            "value": "Checking"
+          },
+          "value_column": "Current Balance"
+        }
+      }
+    ]
+  },
+  "selection_context": {
+    "use_when": "You need to retrieve the current balance of a member's checking account given a specific member ID (member_id). Use this capability when the task is to look up a member by ID, open their record, and report the checking account's current balance.",
+    "workflow_summary": "Search for the member by member ID, open the member record, and extract the current balance for the member's checking account.",
+    "example_goals": [
+      "Get the current checking balance for member 12345",
+      "What's the checking account balance for member 12345?",
+      "Show me member 12345's current checking balance",
+      "Retrieve the checking current balance for member 67890",
+      "Provide the current balance of the checking account for member 24680"
+    ]
+  },
+  "business_outcome_rules": []
+}

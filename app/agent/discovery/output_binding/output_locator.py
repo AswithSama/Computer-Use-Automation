@@ -80,10 +80,15 @@ class OutputLocatorBuilder:
                     return null;
                 }
 
-                // MVP:
-                // If multiple exact occurrences exist, use the
-                // first deepest structural occurrence.
-                const target = matches[0];
+                // If the value appears in a profile field and a table,
+                // prefer the table representation for table-only binding.
+                // The subsequent verifier still requires a unique match.
+                const tableMatches = matches.filter((element) => {
+                    return Boolean(element.closest(
+                        "td, th, [role='cell'], [role='gridcell']"
+                    ));
+                });
+                const target = (tableMatches.length ? tableMatches : matches)[0];
 
 
                 // -------------------------------------------------

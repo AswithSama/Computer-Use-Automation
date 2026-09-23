@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Any
-
+from pydantic import TypeAdapter
 from openai import OpenAI
 
 DEFAULT_MODEL = "gpt-5-mini"
@@ -18,11 +18,7 @@ class StructuredLLMClient:
         model: str | None = None,
     ) -> None:
         self.client = client or OpenAI()
-        self.model = (
-            model
-            or os.getenv(MODEL_ENV_VAR)
-            or DEFAULT_MODEL
-        )
+        self.model = model or os.getenv(MODEL_ENV_VAR) or DEFAULT_MODEL
 
     def create_json_schema(
         self,
@@ -90,7 +86,12 @@ class StructuredLLMClient:
         if isinstance(input_data, str):
             return input_data
 
-        return json.dumps(
+        json_compatible_data = TypeAdapter(Any).dump_python(
             input_data,
+            mode="json",
+        )
+
+        return json.dumps(
+            json_compatible_data,
             indent=2,
         )

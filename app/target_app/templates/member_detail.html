@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block content %}
@@ -22,12 +23,9 @@
     <div>
         <span class="eyebrow">MEMBER {{ member.member_id }}</span>
         <h2>{{ member.name }}</h2>
+
         <div class="record-meta">
             <span>Relationship since {{ member.joined }}</span>
-            <span>•</span>
-            <span>{{ member.email }}</span>
-            <span>•</span>
-            <span>{{ member.phone }}</span>
         </div>
     </div>
 
@@ -65,6 +63,7 @@
         </dl>
     </div>
 
+    <!-- Contact information: temporary table-based test fixture -->
     <div class="panel">
         <div class="panel-heading compact">
             <div>
@@ -73,24 +72,36 @@
             </div>
         </div>
 
-        <dl class="detail-list">
-            <div>
-                <dt>Phone</dt>
-                <dd>{{ member.phone }}</dd>
-            </div>
-            <div>
-                <dt>Email</dt>
-                <dd>{{ member.email }}</dd>
-            </div>
-            <div>
-                <dt>Preferred Contact</dt>
-                <dd>Email</dd>
-            </div>
-            <div>
-                <dt>Mailing Status</dt>
-                <dd>Verified</dd>
-            </div>
-        </dl>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>Phone</td>
+                    <td>{{ member.phone }}</td>
+                </tr>
+
+                <tr>
+                    <td>Email</td>
+                    <td>{{ member.email }}</td>
+                </tr>
+
+                <tr>
+                    <td>Preferred Contact</td>
+                    <td>Email</td>
+                </tr>
+
+                <tr>
+                    <td>Mailing Status</td>
+                    <td>Verified</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -114,6 +125,7 @@
                 <th></th>
             </tr>
         </thead>
+
         <tbody>
         {% for account in member.accounts %}
             <tr>
@@ -125,9 +137,14 @@
                         {{ account.status }}
                     </span>
                 </td>
-                <td class="money">${{ "{:,.2f}".format(account.current_balance) }}</td>
+                <td class="money">
+                    ${{ "{:,.2f}".format(account.current_balance) }}
+                </td>
                 <td class="align-right">
-                    <a class="table-link" href="/members/{{ member.member_id }}/accounts/{{ account.account_id }}">
+                    <a
+                        class="table-link"
+                        href="/members/{{ member.member_id }}/accounts/{{ account.account_id }}"
+                    >
                         View Account
                     </a>
                 </td>
@@ -136,5 +153,6 @@
         </tbody>
     </table>
 </div>
+
 {% endif %}
 {% endblock %}

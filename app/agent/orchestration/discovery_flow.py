@@ -6,6 +6,7 @@ from collections.abc import Callable
 from app.agent.console import field, section, step, success
 from app.agent.capability.checkpoint_detector import CheckpointDetector
 from app.agent.capability.compiler import CapabilityCompiler
+from app.agent.capability.identity_generator import CapabilityIdentityGenerator
 from app.agent.capability.context import CapabilityContextBuilder
 from app.agent.capability.inputs.input_extractor_llm import InputExtractorLLM
 from app.agent.capability.inputs.input_verifier import InputVerifier
@@ -73,10 +74,8 @@ class DiscoveryFlow:
         """
         Discover a workflow when no approved capability matches.
 
-        This demo's compilation configuration is specifically for the
-        savings-balance workflow. Other goals can be discovered, but
-        require their own capability ID, description, and outcome rules
-        before they can be saved as reusable capabilities.
+        Compile autonomous workflows only when their outputs have
+        verified table bindings. Never auto-approve a draft.
         """
         section("DISCOVERY")
         field("Mode", "LLM-guided exploration")
@@ -149,32 +148,26 @@ class DiscoveryFlow:
 
             return result
 
-        # Do not save an unrelated discovered workflow under the
-        # hardcoded savings-balance capability ID.
-        if "savings" not in user_request.casefold():
+        # An answer without a complete verified table-binding set is
+        # not yet reusable. Keep the review evidence, not an executable draft.
+        if not result.outputs or len(result.output_locations) != len(result.outputs):
             logger.warning(
-                "Workflow discovery completed, but the demo compiler is "
-                "configured for savings-balance requests only; no draft saved."
+                "Discovery answered the question, but the output binding "
+                "requires review; no capability draft saved."
             )
+            for ref in result.evidence_refs:
+                logger.info("Review evidence: %s", ref)
             return result
 
-        # ---------------------------------------------------------
-        # Minimize same-page exploration only for an autonomous,
-        # authorized, read-only savings discovery.
-        # ---------------------------------------------------------
-
+        # Optional, verified path minimization; no business-specific action
+        # sequence is required for generic table-based capabilities.
         if self.policy_engine is not None:
             original_path_length = len(result.candidate_path)
 
             result = minimize_discovery_result(
                 result,
                 policy_engine=self.policy_engine,
-                required_action_sequence=(
-                    ActionType.CLICK,
-                    ActionType.FILL,
-                    ActionType.CLICK,
-                    ActionType.CLICK,
-                ),
+                required_action_sequence=None,
             )
 
             minimized_path_length = len(result.candidate_path)
@@ -331,14 +324,24 @@ class DiscoveryFlow:
         # ---------------------------------------------------------
         compiler = CapabilityCompiler()
 
-        artifact = compiler.compile(
-            capability_id="get_savings_balance",
-            description="Retrieve the savings balance for a member.",
-            context=capability_context,
-            extracted_inputs=input_result,
-            checkpoint_candidates=checkpoint_candidates,
-            output_locations=result.output_locations,
-        )
+        try:
+            identity = CapabilityIdentityGenerator().generate(
+                context=capability_context,
+                extracted_inputs=input_result,
+            )
+            artifact = compiler.compile(
+                capability_id=identity.capability_id,
+                description=identity.description,
+                context=capability_context,
+                extracted_inputs=input_result,
+                checkpoint_candidates=checkpoint_candidates,
+                output_locations=result.output_locations,
+            )
+        except ValueError as exc:
+            logger.warning(
+                "Capability compilation requires review; no draft saved: %s", exc
+            )
+            return result
 
         section("CAPABILITY")
         field("ID", artifact.capability_id)
@@ -364,52 +367,47 @@ class DiscoveryFlow:
             selection_context.model_dump_json(),
         )
 
-        # ---------------------------------------------------------
-        # Known business outcomes for the local savings-balance demo.
-        #
-        # These rules are specific to the four-action workflow below.
-        # They are not automatically discovered or generalized.
-        # ---------------------------------------------------------
-        expected_actions = [
-            "click",
-            "fill",
-            "click",
-            "click",
-        ]
-
-        actual_actions = [
-            action.action.value
-            for action in artifact.actions
-        ]
-
-        if actual_actions != expected_actions:
-            logger.error(
-                "Compiled action sequence differs from the savings-balance "
-                "workflow expected by the business-outcome rules; no draft saved."
+        # The existing specialized outcome rules are valid only for the
+        # reviewed, four-action savings workflow; other drafts start with
+        # an empty list. Missing rules never remove generic replay safety.
+        business_outcome_rules = ()
+        savings_contract = (
+            [action.action.value for action in artifact.actions]
+            == ["click", "fill", "click", "click"]
+            and any(
+                parameter.name == "member_id"
+                for parameter in artifact.inputs
             )
-            return None
-
-        business_outcome_rules = (
-            BusinessOutcomeRule(
-                after_action=3,
-                code="member_not_found",
-                reason="The requested member was not found.",
-                url_pattern="/members?member_id={{member_id}}",
-                visible_text=(
-                    "No member record was found for ID {{member_id}}."
-                ),
-            ),
-            BusinessOutcomeRule(
-                after_action=4,
-                code="savings_account_not_found",
-                reason="The requested member has no savings account.",
-                url_pattern="/members/{{member_id}}",
-                kind="table_row_absent",
-                row_match_column="Type",
-                row_match_value="Savings",
-                required_column="Current Balance",
-            ),
+            and any(
+                output.name == "savings_balance"
+                and output.binding.value_column == "Current Balance"
+                and output.binding.row_match.column == "Type"
+                and output.binding.row_match.value == "Savings"
+                for output in artifact.outputs
+            )
         )
+        if savings_contract:
+            business_outcome_rules = (
+                BusinessOutcomeRule(
+                    after_action=3,
+                    code="member_not_found",
+                    reason="The requested member was not found.",
+                    url_pattern="/members?member_id={{member_id}}",
+                    visible_text=(
+                        "No member record was found for ID {{member_id}}."
+                    ),
+                ),
+                BusinessOutcomeRule(
+                    after_action=4,
+                    code="savings_account_not_found",
+                    reason="The requested member has no savings account.",
+                    url_pattern="/members/{{member_id}}",
+                    kind="table_row_absent",
+                    row_match_column="Type",
+                    row_match_value="Savings",
+                    required_column="Current Balance",
+                ),
+            )
 
         # ---------------------------------------------------------
         # Save a draft. Approval remains a separate human action.
@@ -429,9 +427,9 @@ class DiscoveryFlow:
         assert loaded.tenant_id == self.tenant_id
         assert loaded.app_id == self.app_id
         assert loaded.approval_status == "draft"
-        assert loaded.artifact.capability_id == "get_savings_balance"
+        assert loaded.artifact.capability_id == identity.capability_id
         assert loaded.selection_context is not None
-        assert len(loaded.business_outcome_rules) == 2
+        assert len(loaded.business_outcome_rules) == len(business_outcome_rules)
 
         success("Draft saved")
         field("File", saved_path)
