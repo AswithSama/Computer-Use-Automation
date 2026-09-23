@@ -27,6 +27,13 @@ class CapabilityRegistry:
             raise ValueError("Invalid registry identifier.")
         return value
 
+    def _app_folder(self, tenant_id: str, app_id: str) -> Path:
+        return (
+            self.directory
+            / self._safe_id(tenant_id)
+            / self._safe_id(app_id)
+        )
+
     def save_draft(
         self,
         *,
@@ -36,9 +43,6 @@ class CapabilityRegistry:
         selection_context: SelectionContext,
         business_outcome_rules: tuple[BusinessOutcomeRule, ...] = (),
     ) -> Path:
-        tenant_id = self._safe_id(tenant_id)
-        app_id = self._safe_id(app_id)
-
         existing_versions = [
             stored.version
             for _, stored in self.list_eligible(
@@ -58,14 +62,13 @@ class CapabilityRegistry:
             business_outcome_rules=list(business_outcome_rules),
         )
 
-        folder = self.directory / tenant_id / app_id
+        folder = self._app_folder(tenant_id, app_id) / "drafts"
         folder.mkdir(parents=True, exist_ok=True)
 
         filename = (
             f"{self._safe_id(artifact.capability_id)}_"
             f"{uuid4().hex}.json"
         )
-
         path = folder / filename
 
         with path.open("x", encoding="utf-8") as stream:
@@ -75,13 +78,12 @@ class CapabilityRegistry:
 
     def load(self, path: Path) -> StoredCapability:
         return StoredCapability.model_validate_json(
-            path.read_text(encoding="utf-8")
+            Path(path).read_text(encoding="utf-8")
         )
 
     def list_drafts(self) -> list[Path]:
         """
-        Return pending capability draft paths across all tenants
-        and applications.
+        Return draft paths across all tenants and applications.
 
         Invalid records and records whose metadata does not match
         their registry location are skipped.
@@ -91,7 +93,9 @@ class CapabilityRegistry:
 
         pending = []
 
-        for path in sorted(self.directory.glob("*/*/*.json")):
+        for path in sorted(
+            self.directory.glob("*/*/drafts/*.json")
+        ):
             try:
                 stored = self.load(path)
             except Exception as exc:
@@ -105,11 +109,10 @@ class CapabilityRegistry:
             if stored.approval_status != "draft":
                 continue
 
-            # Verify that the stored metadata agrees with
-            # the tenant/application directory.
+            # Path: capabilities / tenant / app / drafts / file.json
             if (
-                path.parent.name != stored.app_id
-                or path.parent.parent.name != stored.tenant_id
+                path.parent.parent.name != stored.app_id
+                or path.parent.parent.parent.name != stored.tenant_id
             ):
                 logger.warning(
                     "Registry location mismatch: %s",
@@ -127,20 +130,21 @@ class CapabilityRegistry:
         tenant_id: str,
         app_id: str,
     ) -> list[tuple[Path, StoredCapability]]:
-        tenant_id = self._safe_id(tenant_id)
-        app_id = self._safe_id(app_id)
-
-        folder = self.directory / tenant_id / app_id
+        folder = self._app_folder(
+            tenant_id,
+            app_id,
+        ) / "approved"
 
         if not folder.exists():
             return []
 
         eligible = []
 
-        for path in folder.glob("*.json"):
+        for path in sorted(folder.glob("*.json")):
             stored = self.load(path)
 
-            # Verify the file's contents, not just its directory.
+            # Approval requires matching stored metadata as well
+            # as placement in the approved directory.
             if (
                 stored.tenant_id == tenant_id
                 and stored.app_id == app_id
@@ -174,15 +178,16 @@ class CapabilityRegistry:
         draft_path = Path(draft_path).resolve()
         draft = self.load(draft_path)
 
-        expected_folder = (
-            self.directory
-            / self._safe_id(draft.tenant_id)
-            / self._safe_id(draft.app_id)
+        app_folder = self._app_folder(
+            draft.tenant_id,
+            draft.app_id,
         ).resolve()
 
-        if draft_path.parent != expected_folder:
+        expected_drafts_folder = app_folder / "drafts"
+
+        if draft_path.parent != expected_drafts_folder:
             raise ValueError(
-                "Draft is outside its registered tenant/app folder."
+                "Draft is outside its registered drafts folder."
             )
 
         if draft.approval_status != "draft":
@@ -190,7 +195,6 @@ class CapabilityRegistry:
                 "Only draft capabilities can be approved."
             )
 
-        # Prevent duplicate approved capability versions.
         if self.is_approved(draft):
             raise ValueError(
                 "An approved capability with this ID "
@@ -204,13 +208,15 @@ class CapabilityRegistry:
             }
         )
 
-        approved_path = expected_folder / (
+        approved_folder = app_folder / "approved"
+        approved_folder.mkdir(parents=True, exist_ok=True)
+
+        approved_path = approved_folder / (
             f"{self._safe_id(draft.artifact.capability_id)}"
             f"_v{draft.version}_approved_{uuid4().hex}.json"
         )
 
-        # Create a new approved snapshot.
-        # Never overwrite the original draft.
+        # Preserve the original draft and create a new approved snapshot.
         with approved_path.open("x", encoding="utf-8") as stream:
             stream.write(
                 approved.model_dump_json(indent=2) + "\n"

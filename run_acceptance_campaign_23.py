@@ -431,7 +431,7 @@ def reset_capability_map(case_dir: Path) -> None:
 
 def registry_reset_for_discovery(p, case_dir: Path):
     """Do not silently remove existing approved capabilities."""
-    if not REGISTRY_DIR.exists() or not any(REGISTRY_DIR.iterdir()):
+    if not REGISTRY_DIR.exists() or not any(REGISTRY_DIR.rglob("*.json")):
         REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
         reset_capability_map(case_dir)
         return

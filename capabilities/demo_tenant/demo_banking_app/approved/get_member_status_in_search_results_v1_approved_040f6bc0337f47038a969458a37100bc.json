@@ -1,18 +1,18 @@
 {
   "tenant_id": "demo_tenant",
   "app_id": "demo_banking_app",
-  "approval_status": "draft",
+  "approval_status": "approved",
   "version": 1,
   "artifact": {
     "schema_version": "1.0",
-    "capability_id": "get_member_status_from_search_results",
-    "description": "Retrieve the member_status string for a given member_id as shown in the member search results.",
+    "capability_id": "get_member_status_in_search_results",
+    "description": "Retrieve the member_status (string) for a given member_id as shown in the member search results.",
     "inputs": [
       {
         "name": "member_id",
         "type": "string",
         "required": true,
-        "description": "Member ID entered into the Member ID field."
+        "description": "Member ID entered into the Member ID field to perform the search."
       }
     ],
     "actions": [
@@ -72,15 +72,15 @@
     ]
   },
   "selection_context": {
-    "use_when": "When you need to look up a member's Status from the member search results by providing a Member ID (the capability requires the member_id input).",
-    "workflow_summary": "Search the Members area for a given Member ID and return the Status value from the matching result row.",
+    "use_when": "When you need to retrieve a member's Status value from the member search results for a specific member ID. The caller must provide the member_id input.",
+    "workflow_summary": "Search for the member by ID in the Members area and return the Status field from the search results row that matches the provided member ID.",
     "example_goals": [
       "What is the status of member 12345?",
-      "Find the Status for member ID 12345",
-      "Show me the Status for member 98765",
-      "Lookup member 12345 and return their status",
-      "Get the member status for 12345",
-      "Retrieve the Status field for member ID 55555"
+      "Retrieve the status for member 12345",
+      "Find the account status for member 12345",
+      "Show the Status for member 12345 from the member search results",
+      "Lookup the status for member 67890",
+      "Get the status value for member 00001"
     ]
   },
   "business_outcome_rules": []

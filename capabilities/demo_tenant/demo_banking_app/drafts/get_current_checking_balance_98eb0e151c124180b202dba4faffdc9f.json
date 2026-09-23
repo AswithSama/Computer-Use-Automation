@@ -5,14 +5,14 @@
   "version": 1,
   "artifact": {
     "schema_version": "1.0",
-    "capability_id": "get_member_phone",
-    "description": "Retrieve the phone number for a specified member_id; returns member_phone (string).",
+    "capability_id": "get_current_checking_balance",
+    "description": "Retrieve the current available balance of a member's checking account given a member_id.",
     "inputs": [
       {
         "name": "member_id",
         "type": "string",
         "required": true,
-        "description": "Member ID entered into the 'Member ID' field to search for the member record."
+        "description": "The member identifier entered into the Member ID field."
       }
     ],
     "actions": [
@@ -20,7 +20,7 @@
         "action": "click",
         "target": {
           "role": "link",
-          "name": "◉ Members"
+          "name": "01 Member Search Locate a member by member ID and review linked accounts."
         },
         "value": null,
         "url": null
@@ -72,29 +72,29 @@
     ],
     "outputs": [
       {
-        "name": "member_phone",
-        "type": "string",
+        "name": "checking_balance",
+        "type": "currency",
         "binding": {
           "kind": "table",
           "row_match": {
-            "column": "Field",
-            "value": "Phone"
+            "column": "Type",
+            "value": "Checking"
           },
-          "value_column": "Value"
+          "value_column": "Current Balance"
         }
       }
     ]
   },
   "selection_context": {
-    "use_when": "You need to obtain the phone number for a specific member and you can provide the member's member_id; the automation will search for and open the member record and return the phone number.",
-    "workflow_summary": "Given a member_id, the workflow searches for and opens that member's record and extracts the member's phone number, returning it as member_phone.",
+    "use_when": "When you need to retrieve the current available balance for a member's checking account and you have the member's identifier (member_id). Use this capability when the request is specifically for the checking account balance for a given member.",
+    "workflow_summary": "Search for the member by member ID, open the member record, and extract the current available balance for the member's checking account.",
     "example_goals": [
-      "Get the phone number of member 12345",
-      "What is member 12345's phone number?",
-      "Find the contact number for member 12345",
-      "Retrieve the phone for member ID 12345",
-      "Lookup the phone number for member 12345",
-      "Show me the phone number for member 12345"
+      "Get the current checking balance for member 12345",
+      "What is the current balance of member 12345's checking account?",
+      "Show the available balance for member 12345 checking",
+      "Retrieve member 12345's checking account current balance",
+      "Check the current available balance in the checking account for member 12345",
+      "Provide the checking balance for member 12345"
     ]
   },
   "business_outcome_rules": []

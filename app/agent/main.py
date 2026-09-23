@@ -72,6 +72,15 @@ def main():
     )
     policy_engine = PolicyEngine(load_demo_banking_config())
 
+    checkpoint_resume_ids = frozenset(
+        stored.artifact.capability_id
+        for _, stored in registry.list_eligible(
+            tenant_id=TENANT_ID,
+            app_id=APP_ID,
+        )
+        if Orchestrator._is_savings_capability(stored.artifact)
+    )
+
     orchestrator = Orchestrator(
         registry=registry,
         selector=selector,
@@ -86,9 +95,7 @@ def main():
         ),
         run_replay = ReplayFlow(
         target_url=TARGET_URL,
-        checkpoint_resume_capability_ids=frozenset({
-            "get_savings_balance",
-        }),
+        checkpoint_resume_capability_ids=checkpoint_resume_ids,
         handoff_manager=handoff_manager,
         policy_engine=policy_engine,
     )

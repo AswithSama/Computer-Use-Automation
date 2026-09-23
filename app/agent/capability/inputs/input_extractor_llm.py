@@ -1,9 +1,7 @@
 import json
 
 from app.agent.capability.context import CapabilityContext
-from app.agent.capability.inputs.input_extraction import (
-    InputExtractionResult,
-)
+from app.agent.capability.inputs.input_extraction import InputExtractionResult
 from app.agent.llm.client import StructuredLLMClient
 from app.agent.schemas.discovery import ActionType
 

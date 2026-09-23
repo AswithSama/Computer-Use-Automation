@@ -1,18 +1,18 @@
 {
   "tenant_id": "demo_tenant",
   "app_id": "demo_banking_app",
-  "approval_status": "approved",
+  "approval_status": "draft",
   "version": 1,
   "artifact": {
     "schema_version": "1.0",
-    "capability_id": "get_member_email",
-    "description": "Retrieve a member's email address given their member_id. Outputs member_email (string).",
+    "capability_id": "get_member_status_in_search_results",
+    "description": "Retrieve the member_status (string) for a given member_id as shown in the member search results.",
     "inputs": [
       {
         "name": "member_id",
         "type": "string",
         "required": true,
-        "description": "Member ID entered into the Member ID textbox to search for the member."
+        "description": "Member ID entered into the Member ID field to perform the search."
       }
     ],
     "actions": [
@@ -42,15 +42,6 @@
         },
         "value": null,
         "url": null
-      },
-      {
-        "action": "click",
-        "target": {
-          "role": "link",
-          "name": "Open Member"
-        },
-        "value": null,
-        "url": null
       }
     ],
     "checkpoints": [
@@ -63,38 +54,33 @@
         "after_action": 3,
         "url_pattern": "/members?member_id={{member_id}}",
         "required_text": []
-      },
-      {
-        "after_action": 4,
-        "url_pattern": "/members/{{member_id}}",
-        "required_text": []
       }
     ],
     "outputs": [
       {
-        "name": "member_email",
+        "name": "member_status",
         "type": "string",
         "binding": {
           "kind": "table",
           "row_match": {
-            "column": "Field",
-            "value": "Email"
+            "column": "Member ID",
+            "value": "{{member_id}}"
           },
-          "value_column": "Value"
+          "value_column": "Status"
         }
       }
     ]
   },
   "selection_context": {
-    "use_when": "When you have a specific member_id and need to retrieve that member's email address from their member record.",
-    "workflow_summary": "Search for the member using the provided member_id, open the member's record, and extract the Email field as member_email.",
+    "use_when": "When you need to retrieve a member's Status value from the member search results for a specific member ID. The caller must provide the member_id input.",
+    "workflow_summary": "Search for the member by ID in the Members area and return the Status field from the search results row that matches the provided member ID.",
     "example_goals": [
-      "Get the email address of member 12345",
-      "Find the email for member 12345",
-      "What is member 12345's email?",
-      "Retrieve the email address for member 12345",
-      "Lookup member 12345's email address",
-      "Show me the email for member 12345"
+      "What is the status of member 12345?",
+      "Retrieve the status for member 12345",
+      "Find the account status for member 12345",
+      "Show the Status for member 12345 from the member search results",
+      "Lookup the status for member 67890",
+      "Get the status value for member 00001"
     ]
   },
   "business_outcome_rules": []

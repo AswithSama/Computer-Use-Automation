@@ -6,13 +6,13 @@
   "artifact": {
     "schema_version": "1.0",
     "capability_id": "get_member_email",
-    "description": "Retrieve a member's email address given their member_id. Outputs member_email (string).",
+    "description": "Retrieve the email address (member_email) for a specified member given their member_id.",
     "inputs": [
       {
         "name": "member_id",
         "type": "string",
         "required": true,
-        "description": "Member ID entered into the Member ID textbox to search for the member."
+        "description": "Member ID entered into the Member ID textbox to retrieve the member's email address."
       }
     ],
     "actions": [
@@ -20,7 +20,7 @@
         "action": "click",
         "target": {
           "role": "link",
-          "name": "◉ Members"
+          "name": "01 Member Search Locate a member by member ID and review linked accounts."
         },
         "value": null,
         "url": null
@@ -86,15 +86,14 @@
     ]
   },
   "selection_context": {
-    "use_when": "When you have a specific member_id and need to retrieve that member's email address from their member record.",
-    "workflow_summary": "Search for the member using the provided member_id, open the member's record, and extract the Email field as member_email.",
+    "use_when": "When you need to obtain a specific member's email address and you have that member's ID (member_id).",
+    "workflow_summary": "Search for the member using their member ID, open the member record, and extract the Email field as the member's email address.",
     "example_goals": [
-      "Get the email address of member 12345",
-      "Find the email for member 12345",
-      "What is member 12345's email?",
-      "Retrieve the email address for member 12345",
-      "Lookup member 12345's email address",
-      "Show me the email for member 12345"
+      "Get the email address for member 12345",
+      "Retrieve member 12345's email",
+      "What is the email for member ID 12345?",
+      "Find the email address associated with member 12345",
+      "Lookup the email for member 12345"
     ]
   },
   "business_outcome_rules": []

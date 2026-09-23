@@ -5,14 +5,14 @@
   "version": 1,
   "artifact": {
     "schema_version": "1.0",
-    "capability_id": "get_member_savings_balance",
-    "description": "Retrieve the current savings balance for a specified member (input: member_id). Returns savings_balance as currency.",
+    "capability_id": "get_savings_balance",
+    "description": "Retrieve the current savings balance (currency) for a specified member.",
     "inputs": [
       {
         "name": "member_id",
         "type": "string",
         "required": true,
-        "description": "Member ID entered to retrieve the member record and balances."
+        "description": "Member ID used to look up the member's savings balance."
       }
     ],
     "actions": [
@@ -86,15 +86,14 @@
     ]
   },
   "selection_context": {
-    "use_when": "Use this capability when you need the current savings account balance for a specific member and can provide that member's ID (member_id). The call returns savings_balance as a currency value.",
-    "workflow_summary": "Search for and open the member record by member ID, then extract the account row whose Type is \"Savings\" and return its \"Current Balance\" as the savings_balance.",
+    "use_when": "When the user asks for the current savings balance (a currency value) for a specific member and supplies a member_id. Use this capability when you need to locate a member by ID, open their record, and return the Savings account's current balance.",
+    "workflow_summary": "Search for the member by member_id, open the member record, and extract the current balance for the member's Savings account, returning it as savings_balance (currency).",
     "example_goals": [
-      "Get the savings balance for member 12345",
-      "Retrieve the current savings balance for member 12345",
-      "What is the savings balance for member 12345?",
-      "Show the savings balance for member 12345",
-      "Lookup the current savings balance for member ID 12345",
-      "Get the current savings balance for member 67890"
+      "Get the current savings balance for member 12345",
+      "What is the current savings balance for member 12345?",
+      "Retrieve the savings account current balance for member ID 12345",
+      "Show the savings current balance for member 67890",
+      "Lookup the current savings balance for member 24680"
     ]
   },
   "business_outcome_rules": [

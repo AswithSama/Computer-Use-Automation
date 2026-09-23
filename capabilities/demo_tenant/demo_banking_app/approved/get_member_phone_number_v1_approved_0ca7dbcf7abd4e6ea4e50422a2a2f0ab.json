@@ -5,14 +5,14 @@
   "version": 1,
   "artifact": {
     "schema_version": "1.0",
-    "capability_id": "get_member_checking_account_current_balance",
-    "description": "Retrieve the current balance of a member's checking account. Input: member_id. Output: checking_account_current_balance (currency).",
+    "capability_id": "get_member_phone_number",
+    "description": "Retrieve a member's phone number given their member_id.",
     "inputs": [
       {
         "name": "member_id",
         "type": "string",
         "required": true,
-        "description": "Member ID entered into the Member ID field to search for the member record."
+        "description": "Member ID entered into the Member ID field."
       }
     ],
     "actions": [
@@ -72,28 +72,28 @@
     ],
     "outputs": [
       {
-        "name": "checking_account_current_balance",
-        "type": "currency",
+        "name": "member_phone_number",
+        "type": "string",
         "binding": {
           "kind": "table",
           "row_match": {
-            "column": "Type",
-            "value": "Checking"
+            "column": "Field",
+            "value": "Phone"
           },
-          "value_column": "Current Balance"
+          "value_column": "Value"
         }
       }
     ]
   },
   "selection_context": {
-    "use_when": "You need to retrieve the current balance of a member's checking account given a specific member ID (member_id). Use this capability when the task is to look up a member by ID, open their record, and report the checking account's current balance.",
-    "workflow_summary": "Search for the member by member ID, open the member record, and extract the current balance for the member's checking account.",
+    "use_when": "You need to obtain a member's phone number from the member management system and you have the member's ID (member_id) to search for their record.",
+    "workflow_summary": "Search for a member by member ID, open their record, and extract the Phone field as the member's phone number.",
     "example_goals": [
-      "Get the current checking balance for member 12345",
-      "What's the checking account balance for member 12345?",
-      "Show me member 12345's current checking balance",
-      "Retrieve the checking current balance for member 67890",
-      "Provide the current balance of the checking account for member 24680"
+      "Get the phone number for member 12345",
+      "Find member 12345's phone number",
+      "Retrieve the contact number for member 12345",
+      "Lookup the phone number for member ID 12345",
+      "Show me the phone number for member 12345"
     ]
   },
   "business_outcome_rules": []
