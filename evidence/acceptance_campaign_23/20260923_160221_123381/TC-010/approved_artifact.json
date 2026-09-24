@@ -1,0 +1,87 @@
+{
+  "tenant_id": "demo_tenant",
+  "app_id": "demo_banking_app",
+  "approval_status": "approved",
+  "version": 1,
+  "artifact": {
+    "schema_version": "1.0",
+    "capability_id": "get_member_status_in_search_results",
+    "description": "Retrieve the member_status (string) for a given member_id as shown in the member search results.",
+    "inputs": [
+      {
+        "name": "member_id",
+        "type": "string",
+        "required": true,
+        "description": "Member ID entered into the Member ID field to perform the search."
+      }
+    ],
+    "actions": [
+      {
+        "action": "click",
+        "target": {
+          "role": "link",
+          "name": "◉ Members"
+        },
+        "value": null,
+        "url": null
+      },
+      {
+        "action": "fill",
+        "target": {
+          "role": "textbox",
+          "name": "Member ID"
+        },
+        "value": "{{member_id}}",
+        "url": null
+      },
+      {
+        "action": "click",
+        "target": {
+          "role": "button",
+          "name": "Search"
+        },
+        "value": null,
+        "url": null
+      }
+    ],
+    "checkpoints": [
+      {
+        "after_action": 1,
+        "url_pattern": "/members",
+        "required_text": []
+      },
+      {
+        "after_action": 3,
+        "url_pattern": "/members?member_id={{member_id}}",
+        "required_text": []
+      }
+    ],
+    "outputs": [
+      {
+        "name": "member_status",
+        "type": "string",
+        "binding": {
+          "kind": "table",
+          "row_match": {
+            "column": "Member ID",
+            "value": "{{member_id}}"
+          },
+          "value_column": "Status"
+        }
+      }
+    ]
+  },
+  "selection_context": {
+    "use_when": "When you need to retrieve a member's Status value from the member search results for a specific member ID. The caller must provide the member_id input.",
+    "workflow_summary": "Search for the member by ID in the Members area and return the Status field from the search results row that matches the provided member ID.",
+    "example_goals": [
+      "What is the status of member 12345?",
+      "Retrieve the status for member 12345",
+      "Find the account status for member 12345",
+      "Show the Status for member 12345 from the member search results",
+      "Lookup the status for member 67890",
+      "Get the status value for member 00001"
+    ]
+  },
+  "business_outcome_rules": []
+}

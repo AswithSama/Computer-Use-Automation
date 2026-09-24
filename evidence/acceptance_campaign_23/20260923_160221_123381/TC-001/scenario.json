@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-001",
+  "category": "Discovery",
+  "scenario": "Discover savings balance",
+  "setup": "Fresh registry",
+  "goal": "Get the current savings balance for member 12345",
+  "expected": "Correct answer; parameterized member_id; verified Savings-row balance binding; checkpoints; documented savings rules.",
+  "operator_note": ""
+}

@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-011",
+  "category": "Selection",
+  "scenario": "Select each of five approved capabilities",
+  "setup": "All five approved",
+  "goal": "Run five paraphrased requests",
+  "expected": "Every paraphrase reuses its corresponding approved capability; no cross-selection or discovery.",
+  "operator_note": ""
+}

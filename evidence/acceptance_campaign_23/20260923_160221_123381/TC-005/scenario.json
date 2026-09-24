@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-005",
+  "category": "Discovery",
+  "scenario": "Discover member status",
+  "setup": "Status must come from member-search results TABLE",
+  "goal": "What is the status of member 12345 in the member search results?",
+  "expected": "Draft binds requested Member ID row and Status column in search-results table; no unsupported detail-page <dl> binding.",
+  "operator_note": ""
+}

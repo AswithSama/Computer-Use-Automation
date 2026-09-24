@@ -1,0 +1,7 @@
+{
+  "capability_id": "get_member_status_in_search_results",
+  "output_name": "member_status",
+  "artifact_sha256": "26031b2b3b9bac7c5c9c6862777296269b417a22e52b2a82b9220b2194ed7786",
+  "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_member_status_in_search_results_857f4b679f2c406f9bf0dcd7da86ac59.json",
+  "source": "newly-discovered-draft"
+}

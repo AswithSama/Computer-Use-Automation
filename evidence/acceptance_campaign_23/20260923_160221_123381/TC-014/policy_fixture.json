@@ -1,0 +1,8 @@
+{
+  "isolated_test_only": true,
+  "selected_capability_id": "get_savings_balance",
+  "source_policy_profile": "get_savings_balance",
+  "temporarily_allowed_action": "navigate",
+  "expected_block": "origin_not_allowed",
+  "production_policy_changed": false
+}

@@ -1,0 +1,23 @@
+{
+  "status": "hard_failure",
+  "reason": "Replay stopped because safe continuation was not verified.",
+  "failure_category": "targeting",
+  "outputs": {},
+  "completed_steps": 0,
+  "failed_step": 1,
+  "error_code": "target_not_found",
+  "expected": null,
+  "observed": null,
+  "evidence_refs": [
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_failure_20260923_211331_606008.json",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_20260923_211331_606008.json",
+    "evidence/acceptance_campaign_23/20260923_160221_123381/TC-017/handoff/6227c8d6-41b4-4c00-aa27-ea640ecea919.jsonl",
+    "evidence/acceptance_campaign_23/20260923_160221_123381/TC-017/handoff/screenshots/6227c8d6-41b4-4c00-aa27-ea640ecea919.png",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_failure_20260923_211541_435567.json",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_20260923_211541_435567.json"
+  ],
+  "recovery_action": null,
+  "human_assisted": false,
+  "intervention_count": 1,
+  "action_may_have_executed": false
+}

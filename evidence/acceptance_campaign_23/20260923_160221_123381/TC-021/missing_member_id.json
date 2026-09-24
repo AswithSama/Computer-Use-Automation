@@ -1,0 +1,16 @@
+{
+  "status": "recoverable_failure",
+  "reason": "Required replay inputs are missing.",
+  "failure_category": "input",
+  "outputs": {},
+  "completed_steps": 0,
+  "failed_step": null,
+  "error_code": "missing_required_inputs",
+  "expected": null,
+  "observed": null,
+  "evidence_refs": [],
+  "recovery_action": "request_input",
+  "human_assisted": false,
+  "intervention_count": 0,
+  "action_may_have_executed": null
+}

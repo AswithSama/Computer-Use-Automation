@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-019",
+  "category": "Miscellaneous",
+  "scenario": "Ambiguous table output",
+  "setup": "Temporary member 33333 with duplicate matching account rows",
+  "goal": "Replay savings or checking for member 33333",
+  "expected": "HARD_FAILURE / OUTPUT / ambiguous_output; do not guess; fixture restored.",
+  "operator_note": ""
+}

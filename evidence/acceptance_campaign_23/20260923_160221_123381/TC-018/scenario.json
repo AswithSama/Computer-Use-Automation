@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-018",
+  "category": "Miscellaneous",
+  "scenario": "Ambiguous action target",
+  "setup": "Temporary duplicate Open Member link in search-results fixture",
+  "goal": "Replay selected capability through duplicate action target",
+  "expected": "Do not arbitrarily click either matching link; targeting failure/handoff; fixture restored.",
+  "operator_note": ""
+}

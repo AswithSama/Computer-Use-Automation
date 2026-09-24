@@ -1,0 +1,7 @@
+{
+  "capability_id": "get_member_phone_number",
+  "output_name": "member_phone_number",
+  "artifact_sha256": "a709795cc7556641a381edf7544ccffe9b9d9832b2923ea43a99d829f50cd502",
+  "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_member_phone_number_373f1afc23e5418d83571f4a5c3dfdf8.json",
+  "source": "newly-discovered-draft"
+}

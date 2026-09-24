@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-006",
+  "category": "Approval / Replay",
+  "scenario": "Approve and cross-member replay: savings",
+  "setup": "Savings draft from TC-001",
+  "goal": "Get the current savings balance for member 67890",
+  "expected": "Operator approves; deterministic replay for 67890; correct savings balance; no discovery.",
+  "operator_note": ""
+}

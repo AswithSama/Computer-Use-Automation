@@ -1,0 +1,19 @@
+{
+  "status": "hard_failure",
+  "reason": "A declared output could not be located.",
+  "failure_category": "output",
+  "outputs": {},
+  "completed_steps": 4,
+  "failed_step": null,
+  "error_code": "output_not_found",
+  "expected": "Exactly one matching output value.",
+  "observed": "Zero matching values.",
+  "evidence_refs": [
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_failure_20260923_211654_205769.json",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_20260923_211654_205769.json"
+  ],
+  "recovery_action": null,
+  "human_assisted": false,
+  "intervention_count": 0,
+  "action_may_have_executed": null
+}

@@ -1,0 +1,7 @@
+{
+  "capability_id": "get_current_checking_balance",
+  "output_name": "checking_balance",
+  "artifact_sha256": "256be37e5618031aa4c2d0dca0222cb701d68e17cfbb293a19f0958c1ec8c6e2",
+  "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_current_checking_balance_98eb0e151c124180b202dba4faffdc9f.json",
+  "source": "newly-discovered-draft"
+}

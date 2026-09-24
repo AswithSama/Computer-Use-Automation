@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-004",
+  "category": "Discovery",
+  "scenario": "Discover member phone",
+  "setup": "Contact information rendered as HTML table",
+  "goal": "Get the phone number of member 12345",
+  "expected": "Distinct phone draft: row Field=Phone, value_column=Value.",
+  "operator_note": ""
+}

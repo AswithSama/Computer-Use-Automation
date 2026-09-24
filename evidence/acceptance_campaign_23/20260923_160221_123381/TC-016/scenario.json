@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-016",
+  "category": "Miscellaneous",
+  "scenario": "Human-assisted checkpoint recovery",
+  "setup": "Checkpoint demo support in existing replay engine",
+  "goal": "Resolve demo checkpoint in SAME browser and resume",
+  "expected": "Checkpoint reverified; SUCCESS; human_assisted=true. Do not bypass verification.",
+  "operator_note": ""
+}

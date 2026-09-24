@@ -1,0 +1,158 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <a href="/">Dashboard</a>
+    <span>/</span>
+    <a href="/members">Members</a>
+    <span>/</span>
+    <span>{{ member_id }}</span>
+</div>
+
+{% if not member %}
+<div class="notice error" role="alert">
+    <strong>Member record unavailable.</strong>
+    <span>No member exists for ID {{ member_id }}.</span>
+</div>
+
+<a class="button secondary" href="/members">Return to Member Search</a>
+{% else %}
+
+<div class="record-header">
+    <div>
+        <span class="eyebrow">MEMBER {{ member.member_id }}</span>
+        <h2>{{ member.name }}</h2>
+
+        <div class="record-meta">
+            <span>Relationship since {{ member.joined }}</span>
+        </div>
+    </div>
+
+    <span class="pill {% if member.status == 'Active' %}success{% else %}neutral{% endif %}">
+        {{ member.status }}
+    </span>
+</div>
+
+<div class="two-column">
+    <div class="panel">
+        <div class="panel-heading compact">
+            <div>
+                <span class="eyebrow">PROFILE</span>
+                <h2>Member information</h2>
+            </div>
+        </div>
+
+        <dl class="detail-list">
+            <div>
+                <dt>Member ID</dt>
+                <dd class="mono">{{ member.member_id }}</dd>
+            </div>
+            <div>
+                <dt>Legal Name</dt>
+                <dd>{{ member.name }}</dd>
+            </div>
+            <div>
+                <dt>Member Status</dt>
+                <dd>{{ member.status }}</dd>
+            </div>
+            <div>
+                <dt>Relationship Since</dt>
+                <dd>{{ member.joined }}</dd>
+            </div>
+        </dl>
+    </div>
+
+    <!-- Contact information: temporary table-based test fixture -->
+    <div class="panel">
+        <div class="panel-heading compact">
+            <div>
+                <span class="eyebrow">CONTACT</span>
+                <h2>Contact information</h2>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>Phone</td>
+                    <td>{{ member.phone }}</td>
+                </tr>
+
+                <tr>
+                    <td>Email</td>
+                    <td>{{ member.email }}</td>
+                </tr>
+
+                <tr>
+                    <td>Preferred Contact</td>
+                    <td>Email</td>
+                </tr>
+
+                <tr>
+                    <td>Mailing Status</td>
+                    <td>Verified</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-heading">
+        <div>
+            <span class="eyebrow">ACCOUNTS</span>
+            <h2>Linked accounts</h2>
+            <p>Select an account to review balances and recent activity.</p>
+        </div>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Nickname</th>
+                <th>Status</th>
+                <th class="align-right">Current Balance</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for account in member.accounts %}
+            <tr>
+                <td class="mono">{{ account.account_id }}</td>
+                <td>{{ account.type }}</td>
+                <td>{{ account.nickname }}</td>
+                <td>
+                    <span class="pill {% if account.status == 'Open' %}success{% elif account.status == 'Restricted' %}danger{% else %}neutral{% endif %}">
+                        {{ account.status }}
+                    </span>
+                </td>
+                <td class="money">
+                    ${{ "{:,.2f}".format(account.current_balance) }}
+                </td>
+                <td class="align-right">
+                    <a
+                        class="table-link"
+                        href="/members/{{ member.member_id }}/accounts/{{ account.account_id }}"
+                    >
+                        View Account
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %}
+{% endblock %}

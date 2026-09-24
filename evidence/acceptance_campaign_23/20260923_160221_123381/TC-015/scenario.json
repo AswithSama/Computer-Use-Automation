@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-015",
+  "category": "Miscellaneous",
+  "scenario": "Unexpected checkpoint state",
+  "setup": "Disposable approved-artifact copy",
+  "goal": "Replay with an intentionally impossible checkpoint URL",
+  "expected": "Checkpoint fails; no successful extraction; evidence. If offered a handoff, choose unresolved.",
+  "operator_note": ""
+}

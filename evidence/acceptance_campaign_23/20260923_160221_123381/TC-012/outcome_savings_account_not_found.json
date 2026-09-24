@@ -1,0 +1,16 @@
+{
+  "status": "business_outcome",
+  "reason": "The requested member has no savings account.",
+  "failure_category": null,
+  "outputs": {},
+  "completed_steps": 3,
+  "failed_step": null,
+  "error_code": "savings_account_not_found",
+  "expected": null,
+  "observed": null,
+  "evidence_refs": [],
+  "recovery_action": null,
+  "human_assisted": false,
+  "intervention_count": 0,
+  "action_may_have_executed": null
+}

@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-013",
+  "category": "Savings recovery",
+  "scenario": "Savings missing required input",
+  "setup": "Approved savings capability",
+  "goal": "Request savings balance without member ID; leave prompted member_id blank",
+  "expected": "Documented recoverable missing_required_inputs / REQUEST_INPUT behavior; no invented ID. Record any other already-defined savings recovery subconditions separately.",
+  "operator_note": ""
+}

@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-021",
+  "category": "Miscellaneous",
+  "scenario": "Missing / malformed required input",
+  "setup": "Approved capability; documented member_id contract",
+  "goal": "Try missing member_id and member abc",
+  "expected": "No invented ID or false success; classify missing and invalid separately; a generic handoff for malformed ID is not proof of structured invalid-input classification.",
+  "operator_note": ""
+}

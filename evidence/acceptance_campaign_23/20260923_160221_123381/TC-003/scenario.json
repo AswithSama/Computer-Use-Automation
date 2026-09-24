@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-003",
+  "category": "Discovery",
+  "scenario": "Discover member email",
+  "setup": "Contact information rendered as HTML table",
+  "goal": "Get the email address of member 12345",
+  "expected": "New email draft: row Field=Email, value_column=Value; output name may vary.",
+  "operator_note": ""
+}

@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-010",
+  "category": "Approval / Replay",
+  "scenario": "Approve and cross-member replay: status",
+  "setup": "Status draft from TC-005",
+  "goal": "What is the status of member 67890?",
+  "expected": "Operator approves; replay returns status from 67890's search-results row; no discovery.",
+  "operator_note": ""
+}

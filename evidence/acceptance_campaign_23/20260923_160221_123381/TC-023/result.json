@@ -1,0 +1,32 @@
+{
+  "serialization": "passed",
+  "decoded": {
+    "validation": {
+      "action": {
+        "action": "click",
+        "target_ref": null,
+        "target_role": "link",
+        "target_name": "◉ Members",
+        "value": null,
+        "url": null,
+        "result": null,
+        "outputs": null,
+        "reason": "serialization regression fixture"
+      },
+      "history": [
+        {
+          "action": "click",
+          "target_ref": null,
+          "target_role": "link",
+          "target_name": "◉ Members",
+          "value": null,
+          "url": null,
+          "result": null,
+          "outputs": null,
+          "reason": "serialization regression fixture"
+        }
+      ]
+    },
+    "query": "Get member email"
+  }
+}

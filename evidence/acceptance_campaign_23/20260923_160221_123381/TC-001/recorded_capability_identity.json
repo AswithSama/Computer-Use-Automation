@@ -1,0 +1,7 @@
+{
+  "capability_id": "get_savings_balance",
+  "output_name": "savings_balance",
+  "artifact_sha256": "9643cb1199bde627fdb4556cffc797a207a849d289bbb2df65a8eba38dfec78c",
+  "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_savings_balance_be44775a74e84c0f833db06e96b7de31.json",
+  "source": "newly-discovered-draft"
+}

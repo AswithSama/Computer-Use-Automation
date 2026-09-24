@@ -1,0 +1,19 @@
+[
+  {
+    "path": "capabilities/demo_tenant/demo_banking_app/drafts/get_member_status_in_search_results_857f4b679f2c406f9bf0dcd7da86ac59.json",
+    "capability_id": "get_member_status_in_search_results",
+    "outputs": [
+      "member_status"
+    ],
+    "binding": [
+      {
+        "kind": "table",
+        "row_match": {
+          "column": "Member ID",
+          "value": "{{member_id}}"
+        },
+        "value_column": "Status"
+      }
+    ]
+  }
+]

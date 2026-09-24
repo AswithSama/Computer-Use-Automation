@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-012",
+  "category": "Savings rules",
+  "scenario": "Existing savings business outcomes",
+  "setup": "Approved savings capability",
+  "goal": "Replay nonexistent member 99999 and no-savings member 22222",
+  "expected": "Both existing business-outcome rules yield documented structured outcomes. Record both subresults.",
+  "operator_note": ""
+}

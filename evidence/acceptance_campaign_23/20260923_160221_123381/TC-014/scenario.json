@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-014",
+  "category": "Miscellaneous",
+  "scenario": "External-origin allowlist",
+  "setup": "Disposable approved-artifact copy, isolated policy fixture",
+  "goal": "Try NAVIGATE https://example.com",
+  "expected": "POLICY hard failure / origin_not_allowed; browser does not navigate outside local app.",
+  "operator_note": ""
+}

@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-002",
+  "category": "Discovery",
+  "scenario": "Discover checking balance",
+  "setup": "No approved checking capability",
+  "goal": "Get the current checking balance for member 12345",
+  "expected": "Correct checking balance; draft uses Checking row and balance column, not Savings.",
+  "operator_note": ""
+}

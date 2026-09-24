@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-007",
+  "category": "Approval / Replay",
+  "scenario": "Approve and cross-member replay: checking",
+  "setup": "Checking draft from TC-002",
+  "goal": "Get the current checking balance for member 54321",
+  "expected": "Operator approves; deterministic replay for 54321; correct checking balance; no discovery.",
+  "operator_note": ""
+}

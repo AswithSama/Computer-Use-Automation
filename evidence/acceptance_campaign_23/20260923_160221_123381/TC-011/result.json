@@ -1,0 +1,92 @@
+{
+  "savings": {
+    "status": "success",
+    "reason": "Capability replay completed successfully.",
+    "failure_category": null,
+    "outputs": {
+      "savings_balance": "$1,840.20"
+    },
+    "completed_steps": 4,
+    "failed_step": null,
+    "error_code": null,
+    "expected": null,
+    "observed": null,
+    "evidence_refs": [],
+    "recovery_action": null,
+    "human_assisted": false,
+    "intervention_count": 0,
+    "action_may_have_executed": null
+  },
+  "checking": {
+    "status": "success",
+    "reason": "Capability replay completed successfully.",
+    "failure_category": null,
+    "outputs": {
+      "checking_balance": "$96.13"
+    },
+    "completed_steps": 4,
+    "failed_step": null,
+    "error_code": null,
+    "expected": null,
+    "observed": null,
+    "evidence_refs": [],
+    "recovery_action": null,
+    "human_assisted": false,
+    "intervention_count": 0,
+    "action_may_have_executed": null
+  },
+  "email": {
+    "status": "success",
+    "reason": "Capability replay completed successfully.",
+    "failure_category": null,
+    "outputs": {
+      "member_email": "jane.demo@example.test"
+    },
+    "completed_steps": 4,
+    "failed_step": null,
+    "error_code": null,
+    "expected": null,
+    "observed": null,
+    "evidence_refs": [],
+    "recovery_action": null,
+    "human_assisted": false,
+    "intervention_count": 0,
+    "action_may_have_executed": null
+  },
+  "phone": {
+    "status": "success",
+    "reason": "Capability replay completed successfully.",
+    "failure_category": null,
+    "outputs": {
+      "member_phone_number": "(555) 010-4455"
+    },
+    "completed_steps": 4,
+    "failed_step": null,
+    "error_code": null,
+    "expected": null,
+    "observed": null,
+    "evidence_refs": [],
+    "recovery_action": null,
+    "human_assisted": false,
+    "intervention_count": 0,
+    "action_may_have_executed": null
+  },
+  "status": {
+    "status": "success",
+    "reason": "Capability replay completed successfully.",
+    "failure_category": null,
+    "outputs": {
+      "member_status": "Active"
+    },
+    "completed_steps": 3,
+    "failed_step": null,
+    "error_code": null,
+    "expected": null,
+    "observed": null,
+    "evidence_refs": [],
+    "recovery_action": null,
+    "human_assisted": false,
+    "intervention_count": 0,
+    "action_may_have_executed": null
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-009",
+  "category": "Approval / Replay",
+  "scenario": "Approve and cross-member replay: phone",
+  "setup": "Phone draft from TC-004",
+  "goal": "Get the phone number of member 54321",
+  "expected": "Operator approves; replay returns 54321's phone, not discovery phone; no discovery.",
+  "operator_note": ""
+}

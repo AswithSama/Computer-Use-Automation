@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-023",
+  "category": "Miscellaneous",
+  "scenario": "Validator LLM input serialization regression",
+  "setup": "No browser mutation; local BrowserAction object",
+  "goal": "Serialize nested BrowserAction through shared transport method",
+  "expected": "JSON serialization succeeds with nested model; no BrowserAction TypeError. This checks serialization only, not an actual remote LLM response.",
+  "operator_note": ""
+}

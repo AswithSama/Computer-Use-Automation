@@ -1,0 +1,23 @@
+{
+  "status": "hard_failure",
+  "reason": "Replay stopped because safe continuation was not verified.",
+  "failure_category": "checkpoint",
+  "outputs": {},
+  "completed_steps": 0,
+  "failed_step": 1,
+  "error_code": "checkpoint_failed",
+  "expected": null,
+  "observed": null,
+  "evidence_refs": [
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_failure_20260923_211226_905531.json",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_20260923_211226_905531.json",
+    "evidence/acceptance_campaign_23/20260923_160221_123381/TC-015/handoff/f5d9b10a-1fb0-4a44-96e8-e7c7ad1c4eb0.jsonl",
+    "evidence/acceptance_campaign_23/20260923_160221_123381/TC-015/handoff/screenshots/f5d9b10a-1fb0-4a44-96e8-e7c7ad1c4eb0.png",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_failure_20260923_211241_554585.json",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_20260923_211241_554585.json"
+  ],
+  "recovery_action": null,
+  "human_assisted": false,
+  "intervention_count": 1,
+  "action_may_have_executed": true
+}

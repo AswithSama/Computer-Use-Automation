@@ -1,0 +1,19 @@
+[
+  {
+    "path": "capabilities/demo_tenant/demo_banking_app/drafts/get_current_checking_balance_98eb0e151c124180b202dba4faffdc9f.json",
+    "capability_id": "get_current_checking_balance",
+    "outputs": [
+      "checking_balance"
+    ],
+    "binding": [
+      {
+        "kind": "table",
+        "row_match": {
+          "column": "Type",
+          "value": "Checking"
+        },
+        "value_column": "Current Balance"
+      }
+    ]
+  }
+]

@@ -1,0 +1,213 @@
+{
+  "started_at": "2026-09-23T21:02:21.123484+00:00",
+  "cases": [
+    {
+      "test_id": "TC-001",
+      "category": "Discovery",
+      "scenario": "Discover savings balance",
+      "setup": "Fresh registry",
+      "goal": "Get the current savings balance for member 12345",
+      "expected": "Correct answer; parameterized member_id; verified Savings-row balance binding; checkpoints; documented savings rules.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-002",
+      "category": "Discovery",
+      "scenario": "Discover checking balance",
+      "setup": "No approved checking capability",
+      "goal": "Get the current checking balance for member 12345",
+      "expected": "Correct checking balance; draft uses Checking row and balance column, not Savings.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-003",
+      "category": "Discovery",
+      "scenario": "Discover member email",
+      "setup": "Contact information rendered as HTML table",
+      "goal": "Get the email address of member 12345",
+      "expected": "New email draft: row Field=Email, value_column=Value; output name may vary.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-004",
+      "category": "Discovery",
+      "scenario": "Discover member phone",
+      "setup": "Contact information rendered as HTML table",
+      "goal": "Get the phone number of member 12345",
+      "expected": "Distinct phone draft: row Field=Phone, value_column=Value.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-005",
+      "category": "Discovery",
+      "scenario": "Discover member status",
+      "setup": "Status must come from member-search results TABLE",
+      "goal": "What is the status of member 12345 in the member search results?",
+      "expected": "Draft binds requested Member ID row and Status column in search-results table; no unsupported detail-page <dl> binding.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-006",
+      "category": "Approval / Replay",
+      "scenario": "Approve and cross-member replay: savings",
+      "setup": "Savings draft from TC-001",
+      "goal": "Get the current savings balance for member 67890",
+      "expected": "Operator approves; deterministic replay for 67890; correct savings balance; no discovery.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-007",
+      "category": "Approval / Replay",
+      "scenario": "Approve and cross-member replay: checking",
+      "setup": "Checking draft from TC-002",
+      "goal": "Get the current checking balance for member 54321",
+      "expected": "Operator approves; deterministic replay for 54321; correct checking balance; no discovery.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-008",
+      "category": "Approval / Replay",
+      "scenario": "Approve and cross-member replay: email",
+      "setup": "Email draft from TC-003",
+      "goal": "Get the email address of member 67890",
+      "expected": "Operator approves; replay returns 67890's email, not discovery email; no discovery.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-009",
+      "category": "Approval / Replay",
+      "scenario": "Approve and cross-member replay: phone",
+      "setup": "Phone draft from TC-004",
+      "goal": "Get the phone number of member 54321",
+      "expected": "Operator approves; replay returns 54321's phone, not discovery phone; no discovery.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-010",
+      "category": "Approval / Replay",
+      "scenario": "Approve and cross-member replay: status",
+      "setup": "Status draft from TC-005",
+      "goal": "What is the status of member 67890?",
+      "expected": "Operator approves; replay returns status from 67890's search-results row; no discovery.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-011",
+      "category": "Selection",
+      "scenario": "Select each of five approved capabilities",
+      "setup": "All five approved",
+      "goal": "Run five paraphrased requests",
+      "expected": "Every paraphrase reuses its corresponding approved capability; no cross-selection or discovery.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-012",
+      "category": "Savings rules",
+      "scenario": "Existing savings business outcomes",
+      "setup": "Approved savings capability",
+      "goal": "Replay nonexistent member 99999 and no-savings member 22222",
+      "expected": "Both existing business-outcome rules yield documented structured outcomes. Record both subresults.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-013",
+      "category": "Savings recovery",
+      "scenario": "Savings missing required input",
+      "setup": "Approved savings capability",
+      "goal": "Request savings balance without member ID; leave prompted member_id blank",
+      "expected": "Documented recoverable missing_required_inputs / REQUEST_INPUT behavior; no invented ID. Record any other already-defined savings recovery subconditions separately.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-014",
+      "category": "Miscellaneous",
+      "scenario": "External-origin allowlist",
+      "setup": "Disposable approved-artifact copy, isolated policy fixture",
+      "goal": "Try NAVIGATE https://example.com",
+      "expected": "POLICY hard failure / origin_not_allowed; browser does not navigate outside local app.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-015",
+      "category": "Miscellaneous",
+      "scenario": "Unexpected checkpoint state",
+      "setup": "Disposable approved-artifact copy",
+      "goal": "Replay with an intentionally impossible checkpoint URL",
+      "expected": "Checkpoint fails; no successful extraction; evidence. If offered a handoff, choose unresolved.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-016",
+      "category": "Miscellaneous",
+      "scenario": "Human-assisted checkpoint recovery",
+      "setup": "Checkpoint demo support in existing replay engine",
+      "goal": "Resolve demo checkpoint in SAME browser and resume",
+      "expected": "Checkpoint reverified; SUCCESS; human_assisted=true. Do not bypass verification.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-017",
+      "category": "Miscellaneous",
+      "scenario": "Missing action target",
+      "setup": "Disposable copy of any supported approved capability",
+      "goal": "Make a recorded target name absent",
+      "expected": "No click on unrelated control; recorded safe failure/handoff.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-018",
+      "category": "Miscellaneous",
+      "scenario": "Ambiguous action target",
+      "setup": "Temporary duplicate Open Member link in search-results fixture",
+      "goal": "Replay selected capability through duplicate action target",
+      "expected": "Do not arbitrarily click either matching link; targeting failure/handoff; fixture restored.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-019",
+      "category": "Miscellaneous",
+      "scenario": "Ambiguous table output",
+      "setup": "Temporary member 33333 with duplicate matching account rows",
+      "goal": "Replay savings or checking for member 33333",
+      "expected": "HARD_FAILURE / OUTPUT / ambiguous_output; do not guess; fixture restored.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-020",
+      "category": "Miscellaneous",
+      "scenario": "Missing table output",
+      "setup": "Temporarily remove Email/Phone row from contact table",
+      "goal": "Replay approved email or phone for member 67890",
+      "expected": "OUTPUT failure, no stale discovery value or wrong field; fixture restored.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-021",
+      "category": "Miscellaneous",
+      "scenario": "Missing / malformed required input",
+      "setup": "Approved capability; documented member_id contract",
+      "goal": "Try missing member_id and member abc",
+      "expected": "No invented ID or false success; classify missing and invalid separately; a generic handoff for malformed ID is not proof of structured invalid-input classification.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-022",
+      "category": "Miscellaneous",
+      "scenario": "Member not found / wrong-member protection",
+      "setup": "Approved capability; nonexistent member 99999",
+      "goal": "Replay a question for member 99999",
+      "expected": "No value from a previous/wrong member; documented no-record outcome or safe failure.",
+      "operator_note": ""
+    },
+    {
+      "test_id": "TC-023",
+      "category": "Miscellaneous",
+      "scenario": "Validator LLM input serialization regression",
+      "setup": "No browser mutation; local BrowserAction object",
+      "goal": "Serialize nested BrowserAction through shared transport method",
+      "expected": "JSON serialization succeeds with nested model; no BrowserAction TypeError. This checks serialization only, not an actual remote LLM response.",
+      "operator_note": ""
+    }
+  ],
+  "target": "http://127.0.0.1:8000"
+}

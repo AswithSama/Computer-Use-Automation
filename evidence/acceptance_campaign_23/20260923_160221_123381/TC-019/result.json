@@ -1,0 +1,19 @@
+{
+  "status": "hard_failure",
+  "reason": "An output binding matched multiple values.",
+  "failure_category": "output",
+  "outputs": {},
+  "completed_steps": 4,
+  "failed_step": null,
+  "error_code": "ambiguous_output",
+  "expected": "Exactly one matching output value.",
+  "observed": "2 matching values.",
+  "evidence_refs": [
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_failure_20260923_211635_108064.json",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_20260923_211635_108064.json"
+  ],
+  "recovery_action": null,
+  "human_assisted": false,
+  "intervention_count": 0,
+  "action_may_have_executed": null
+}

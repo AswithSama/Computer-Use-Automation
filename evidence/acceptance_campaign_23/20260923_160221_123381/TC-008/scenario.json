@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-008",
+  "category": "Approval / Replay",
+  "scenario": "Approve and cross-member replay: email",
+  "setup": "Email draft from TC-003",
+  "goal": "Get the email address of member 67890",
+  "expected": "Operator approves; replay returns 67890's email, not discovery email; no discovery.",
+  "operator_note": ""
+}

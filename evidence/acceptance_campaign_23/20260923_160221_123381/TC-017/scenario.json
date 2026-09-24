@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-017",
+  "category": "Miscellaneous",
+  "scenario": "Missing action target",
+  "setup": "Disposable copy of any supported approved capability",
+  "goal": "Make a recorded target name absent",
+  "expected": "No click on unrelated control; recorded safe failure/handoff.",
+  "operator_note": ""
+}

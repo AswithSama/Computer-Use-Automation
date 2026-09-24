@@ -1,0 +1,23 @@
+{
+  "status": "success",
+  "reason": "Capability replay completed successfully.",
+  "failure_category": null,
+  "outputs": {
+    "savings_balance": "$4,250.75"
+  },
+  "completed_steps": 4,
+  "failed_step": null,
+  "error_code": null,
+  "expected": null,
+  "observed": null,
+  "evidence_refs": [
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_failure_20260923_211302_942806.json",
+    "/Users/aswithsama/Desktop/computer-use-automation/evidence/replay_20260923_211302_942806.json",
+    "evidence/acceptance_campaign_23/20260923_160221_123381/TC-016/handoff/af867077-55ff-4e07-965c-b952a0bc37db.jsonl",
+    "evidence/acceptance_campaign_23/20260923_160221_123381/TC-016/handoff/screenshots/af867077-55ff-4e07-965c-b952a0bc37db.png"
+  ],
+  "recovery_action": null,
+  "human_assisted": true,
+  "intervention_count": 1,
+  "action_may_have_executed": null
+}

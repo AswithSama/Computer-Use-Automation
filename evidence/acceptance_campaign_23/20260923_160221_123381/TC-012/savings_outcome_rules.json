@@ -1,0 +1,4 @@
+[
+  "BusinessOutcomeRule(after_action=3, code='member_not_found', reason='The requested member was not found.', url_pattern='/members?member_id={{member_id}}', kind='visible_text', visible_text='No member record was found for ID {{member_id}}.', row_match_column=None, row_match_value=None, required_column=None)",
+  "BusinessOutcomeRule(after_action=4, code='savings_account_not_found', reason='The requested member has no savings account.', url_pattern='/members/{{member_id}}', kind='table_row_absent', visible_text=None, row_match_column='Type', row_match_value='Savings', required_column='Current Balance')"
+]

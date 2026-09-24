@@ -1,0 +1,41 @@
+{
+  "tenant_id": "demo_tenant",
+  "app_id": "demo_banking_app",
+  "capabilities": {
+    "savings": {
+      "capability_id": "get_savings_balance",
+      "output_name": "savings_balance",
+      "artifact_sha256": "9643cb1199bde627fdb4556cffc797a207a849d289bbb2df65a8eba38dfec78c",
+      "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_savings_balance_be44775a74e84c0f833db06e96b7de31.json",
+      "source": "newly-discovered-draft"
+    },
+    "checking": {
+      "capability_id": "get_current_checking_balance",
+      "output_name": "checking_balance",
+      "artifact_sha256": "256be37e5618031aa4c2d0dca0222cb701d68e17cfbb293a19f0958c1ec8c6e2",
+      "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_current_checking_balance_98eb0e151c124180b202dba4faffdc9f.json",
+      "source": "newly-discovered-draft"
+    },
+    "email": {
+      "capability_id": "get_member_email",
+      "output_name": "member_email",
+      "artifact_sha256": "72527038d814e319e989de948035cc680ebf33fb940721e4896ce4751a585a0a",
+      "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_member_email_7c70955ff48549d48ce6b8c66b1519fe.json",
+      "source": "newly-discovered-draft"
+    },
+    "phone": {
+      "capability_id": "get_member_phone_number",
+      "output_name": "member_phone_number",
+      "artifact_sha256": "a709795cc7556641a381edf7544ccffe9b9d9832b2923ea43a99d829f50cd502",
+      "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_member_phone_number_373f1afc23e5418d83571f4a5c3dfdf8.json",
+      "source": "newly-discovered-draft"
+    },
+    "status": {
+      "capability_id": "get_member_status_in_search_results",
+      "output_name": "member_status",
+      "artifact_sha256": "26031b2b3b9bac7c5c9c6862777296269b417a22e52b2a82b9220b2194ed7786",
+      "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_member_status_in_search_results_857f4b679f2c406f9bf0dcd7da86ac59.json",
+      "source": "newly-discovered-draft"
+    }
+  }
+}

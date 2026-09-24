@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-020",
+  "category": "Miscellaneous",
+  "scenario": "Missing table output",
+  "setup": "Temporarily remove Email/Phone row from contact table",
+  "goal": "Replay approved email or phone for member 67890",
+  "expected": "OUTPUT failure, no stale discovery value or wrong field; fixture restored.",
+  "operator_note": ""
+}

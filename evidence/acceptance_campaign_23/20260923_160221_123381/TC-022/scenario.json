@@ -1,0 +1,9 @@
+{
+  "test_id": "TC-022",
+  "category": "Miscellaneous",
+  "scenario": "Member not found / wrong-member protection",
+  "setup": "Approved capability; nonexistent member 99999",
+  "goal": "Replay a question for member 99999",
+  "expected": "No value from a previous/wrong member; documented no-record outcome or safe failure.",
+  "operator_note": ""
+}

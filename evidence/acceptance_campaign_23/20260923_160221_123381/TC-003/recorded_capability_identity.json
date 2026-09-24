@@ -1,0 +1,7 @@
+{
+  "capability_id": "get_member_email",
+  "output_name": "member_email",
+  "artifact_sha256": "72527038d814e319e989de948035cc680ebf33fb940721e4896ce4751a585a0a",
+  "original_path": "/Users/aswithsama/Desktop/computer-use-automation/capabilities/demo_tenant/demo_banking_app/drafts/get_member_email_7c70955ff48549d48ce6b8c66b1519fe.json",
+  "source": "newly-discovered-draft"
+}
