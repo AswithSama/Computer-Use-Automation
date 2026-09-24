@@ -20,8 +20,7 @@
   - [3.7 Failure Handling and Human Handoff](#37-failure-handling-and-human-handoff)
   - [3.8 Security and Allowlisting](#38-security-and-allowlisting)
   - [3.9 Testing and Verification](#39-testing-and-verification)
-- [4. Execution Demonstration](#4-execution-demonstration)
-- [Visual asset checklist](#visual-asset-checklist)
+
 
 </details>
 
@@ -177,41 +176,7 @@ If no approved capability matches, the request enters discovery. Here the centra
 
 NOTE: The video walkthrough demonstrates the test case.
 
-┌──────────────────────────┐
-│   OBSERVE BROWSER STATE  │◄──────────────────────┐
-└────────────┬─────────────┘                       │
-             ▼                                     │
-┌──────────────────────────┐                       │
-│   LLM PROPOSES NEXT STEP │                       │
-└────────────┬─────────────┘                       │
-             ▼                                     │
-       ┌─────────────┐                             │
-       │  DECISION?  │                             │
-       └──────┬──────┘                             │
-              │                                    │
-     ┌────────┼──────────┐                         │
-     ▼        ▼          ▼                         │
-   ACTION   FINISH     HANDOFF                     │
-     │        │          │                         │
-     ▼        ▼          ▼                         │
-┌─────────┐ ┌────────┐ ┌──────────────┐             │
-│ Policy +│ │ Verify │ │ Human takes │             │
-│grounding│ │ goal   │ │ control     │             │
-└────┬────┘ └───┬────┘ └──────┬───────┘             │
-     ▼          ▼             ▼                     │
-┌─────────┐  Complete     Verify safe              │
-│Playwright│             continuation ─────────────┤
-│ action  │                                       │
-└────┬────┘                                       │
-     ▼                                            │
-┌──────────────────────────┐                      │
-│ Observe + verify outcome │                      │
-└────────────┬─────────────┘                      │
-             ▼                                    │
-┌──────────────────────────┐                      │
-│ Record successful        │                      │
-│ transition               │──────────────────────┘
-└──────────────────────────┘
+![](data\:image/svg+xml;utf8,%3Csvg%20id%3D%22mermaid-_r_i0_%22%20width%3D%22743.241455078125%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22flowchart%22%20height%3D%22790.69091796875%22%20viewBox%3D%224%204%20743.241455078125%20790.69091796875%22%20role%3D%22graphics-document%20document%22%20aria-roledescription%3D%22flowchart-v2%22%3E%3Cstyle%3E%23mermaid-_r_i0_%7Bfont-family%3A%22-apple-system%22%2C%22BlinkMacSystemFont%22%2C%22Segoe%20UI%22%2C%22Roboto%22%2C%22Oxygen%22%2C%22Ubuntu%22%2C%22Cantarell%22%2C%22Helvetica%20Neue%22%2C%22Arial%22%2C%22sans-serif%22%3Bfont-size%3A14px%3Bfill%3Argb\(255%2C%20255%2C%20255\)%3B%7D%40keyframes%20edge-animation-frame%7Bfrom%7Bstroke-dashoffset%3A0%3B%7D%7D%40keyframes%20dash%7Bto%7Bstroke-dashoffset%3A0%3B%7D%7D%23mermaid-_r_i0_%20.edge-animation-slow%7Bstroke-dasharray%3A9%2C5!important%3Bstroke-dashoffset%3A900%3Banimation%3Adash%2050s%20linear%20infinite%3Bstroke-linecap%3Around%3B%7D%23mermaid-_r_i0_%20.edge-animation-fast%7Bstroke-dasharray%3A9%2C5!important%3Bstroke-dashoffset%3A900%3Banimation%3Adash%2020s%20linear%20infinite%3Bstroke-linecap%3Around%3B%7D%23mermaid-_r_i0_%20.error-icon%7Bfill%3Argb\(33%2C%2033%2C%2033\)%3B%7D%23mermaid-_r_i0_%20.error-text%7Bfill%3Argb\(255%2C%20255%2C%20255\)%3Bstroke%3Argb\(255%2C%20255%2C%20255\)%3B%7D%23mermaid-_r_i0_%20.edge-thickness-normal%7Bstroke-width%3A1px%3B%7D%23mermaid-_r_i0_%20.edge-thickness-thick%7Bstroke-width%3A3.5px%3B%7D%23mermaid-_r_i0_%20.edge-pattern-solid%7Bstroke-dasharray%3A0%3B%7D%23mermaid-_r_i0_%20.edge-thickness-invisible%7Bstroke-width%3A0%3Bfill%3Anone%3B%7D%23mermaid-_r_i0_%20.edge-pattern-dashed%7Bstroke-dasharray%3A3%3B%7D%23mermaid-_r_i0_%20.edge-pattern-dotted%7Bstroke-dasharray%3A2%3B%7D%23mermaid-_r_i0_%20.marker%7Bfill%3Argb\(205%2C%20205%2C%20205\)%3Bstroke%3Argb\(205%2C%20205%2C%20205\)%3B%7D%23mermaid-_r_i0_%20.marker.cross%7Bstroke%3Argb\(205%2C%20205%2C%20205\)%3B%7D%23mermaid-_r_i0_%20svg%7Bfont-family%3A%22-apple-system%22%2C%22BlinkMacSystemFont%22%2C%22Segoe%20UI%22%2C%22Roboto%22%2C%22Oxygen%22%2C%22Ubuntu%22%2C%22Cantarell%22%2C%22Helvetica%20Neue%22%2C%22Arial%22%2C%22sans-serif%22%3Bfont-size%3A14px%3B%7D%23mermaid-_r_i0_%20p%7Bmargin%3A0%3B%7D%23mermaid-_r_i0_%20.label%7Bfont-family%3A%22-apple-system%22%2C%22BlinkMacSystemFont%22%2C%22Segoe%20UI%22%2C%22Roboto%22%2C%22Oxygen%22%2C%22Ubuntu%22%2C%22Cantarell%22%2C%22Helvetica%20Neue%22%2C%22Arial%22%2C%22sans-serif%22%3Bcolor%3Argb\(255%2C%20255%2C%20255\)%3B%7D%23mermaid-_r_i0_%20.cluster-label%20text%7Bfill%3Argb\(255%2C%20255%2C%20255\)%3B%7D%23mermaid-_r_i0_%20.cluster-label%20span%7Bcolor%3Argb\(255%2C%20255%2C%20255\)%3B%7D%23mermaid-_r_i0_%20.cluster-label%20span%20p%7Bbackground-color%3Atransparent%3B%7D%23mermaid-_r_i0_%20.label%20text%2C%23mermaid-_r_i0_%20span%7Bfill%3Argb\(255%2C%20255%2C%20255\)%3Bcolor%3Argb\(255%2C%20255%2C%20255\)%3B%7D%23mermaid-_r_i0_%20.node%20rect%2C%23mermaid-_r_i0_%20.node%20circle%2C%23mermaid-_r_i0_%20.node%20ellipse%2C%23mermaid-_r_i0_%20.node%20polygon%2C%23mermaid-_r_i0_%20.node%20path%7Bfill%3Argb\(9%2C%2023%2C%2044\)%3Bstroke%3Argb\(31%2C%2078%2C%20148\)%3Bstroke-width%3A1px%3B%7D%23mermaid-_r_i0_%20.rough-node%20.label%20text%2C%23mermaid-_r_i0_%20.node%20.label%20text%2C%23mermaid-_r_i0_%20.image-shape%20.label%2C%23mermaid-_r_i0_%20.icon-shape%20.label%7Btext-anchor%3Amiddle%3B%7D%23mermaid-_r_i0_%20.node%20.katex%20path%7Bfill%3A%23000%3Bstroke%3A%23000%3Bstroke-width%3A1px%3B%7D%23mermaid-_r_i0_%20.rough-node%20.label%2C%23mermaid-_r_i0_%20.node%20.label%2C%23mermaid-_r_i0_%20.image-shape%20.label%2C%23mermaid-_r_i0_%20.icon-shape%20.label%7Btext-align%3Acenter%3B%7D%23mermaid-_r_i0_%20.node.clickable%7Bcursor%3Apointer%3B%7D%23mermaid-_r_i0_%20.root%20.anchor%20path%7Bfill%3Argb\(205%2C%20205%2C%20205\)!important%3Bstroke-width%3A0%3Bstroke%3Argb\(205%2C%20205%2C%20205\)%3B%7D%23mermaid-_r_i0_%20.arrowheadPath%7Bfill%3Argb\(205%2C%20205%2C%20205\)%3B%7D%23mermaid-_r_i0_%20.edgePath%20.path%7Bstroke%3Argb\(205%2C%20205%2C%20205\)%3Bstroke-width%3A2.0px%3B%7D%23mermaid-_r_i0_%20.flowchart-link%7Bstroke%3Argb\(205%2C%20205%2C%20205\)%3Bfill%3Anone%3B%7D%23mermaid-_r_i0_%20.edgeLabel%7Bbackground-color%3Argb\(0%2C%200%2C%200\)%3Btext-align%3Acenter%3B%7D%23mermaid-_r_i0_%20.edgeLabel%20p%7Bbackground-color%3Argb\(0%2C%200%2C%200\)%3B%7D%23mermaid-_r_i0_%20.edgeLabel%20rect%7Bopacity%3A0.5%3Bbackground-color%3Argb\(0%2C%200%2C%200\)%3Bfill%3Argb\(0%2C%200%2C%200\)%3B%7D%23mermaid-_r_i0_%20.labelBkg%7Bbackground-color%3Argba\(0%2C%200%2C%200%2C%200.5\)%3B%7D%23mermaid-_r_i0_%20.cluster%20rect%7Bfill%3Argb\(33%2C%2033%2C%2033\)%3Bstroke%3Argba\(255%2C%20255%2C%20255%2C%200.05\)%3Bstroke-width%3A1px%3B%7D%23mermaid-_r_i0_%20.cluster%20text%7Bfill%3Argb\(255%2C%20255%2C%20255\)%3B%7D%23mermaid-_r_i0_%20.cluster%20span%7Bcolor%3Argb\(255%2C%20255%2C%20255\)%3B%7D%23mermaid-_r_i0_%20div.mermaidTooltip%7Bposition%3Aabsolute%3Btext-align%3Acenter%3Bmax-width%3A200px%3Bpadding%3A2px%3Bfont-family%3A%22-apple-system%22%2C%22BlinkMacSystemFont%22%2C%22Segoe%20UI%22%2C%22Roboto%22%2C%22Oxygen%22%2C%22Ubuntu%22%2C%22Cantarell%22%2C%22Helvetica%20Neue%22%2C%22Arial%22%2C%22sans-serif%22%3Bfont-size%3A12px%3Bbackground%3Argb\(33%2C%2033%2C%2033\)%3Bborder%3A1px%20solid%20rgba\(255%2C%20255%2C%20255%2C%200.05\)%3Bborder-radius%3A2px%3Bpointer-events%3Anone%3Bz-index%3A100%3B%7D%23mermaid-_r_i0_%20.flowchartTitleText%7Btext-anchor%3Amiddle%3Bfont-size%3A18px%3Bfill%3Argb\(255%2C%20255%2C%20255\)%3B%7D%23mermaid-_r_i0_%20rect.text%7Bfill%3Anone%3Bstroke-width%3A0%3B%7D%23mermaid-_r_i0_%20.icon-shape%2C%23mermaid-_r_i0_%20.image-shape%7Bbackground-color%3Argb\(0%2C%200%2C%200\)%3Btext-align%3Acenter%3B%7D%23mermaid-_r_i0_%20.icon-shape%20p%2C%23mermaid-_r_i0_%20.image-shape%20p%7Bbackground-color%3Argb\(0%2C%200%2C%200\)%3Bpadding%3A2px%3B%7D%23mermaid-_r_i0_%20.icon-shape%20rect%2C%23mermaid-_r_i0_%20.image-shape%20rect%7Bopacity%3A0.5%3Bbackground-color%3Argb\(0%2C%200%2C%200\)%3Bfill%3Argb\(0%2C%200%2C%200\)%3B%7D%23mermaid-_r_i0_%20.label-icon%7Bdisplay%3Ainline-block%3Bheight%3A1em%3Boverflow%3Avisible%3Bvertical-align%3A-0.125em%3B%7D%23mermaid-_r_i0_%20.node%20.label-icon%20path%7Bfill%3AcurrentColor%3Bstroke%3Arevert%3Bstroke-width%3Arevert%3B%7D%23mermaid-_r_i0_%20.node%20text%7Bfont-size%3A16px%3Bfont-weight%3A600%3Bletter-spacing%3A-0.32px%3Bfill%3A%2399ceff%3B%7D%23mermaid-_r_i0_%20.edgeLabels%20text%7Bfont-size%3A13px%3Bfont-weight%3A600%3Bletter-spacing%3A-0.08px%3Bfill%3A%2399ceff%3B%7D%23mermaid-_r_i0_%20.node%20tspan%5Bfont-weight%3D%22normal%22%5D%2C%23mermaid-_r_i0_%20.edgeLabels%20tspan%5Bfont-weight%3D%22normal%22%5D%7Bfont-weight%3A600%3B%7D%23mermaid-_r_i0_%20.edgeLabel%20.label%20rect%7Bopacity%3A1%3Brx%3A13px%3Bry%3A13px%3Bfill%3A%23000e1a%3Bstroke%3Argb\(26%2C%2062%2C%2095\)%3Bstroke-width%3A1px%3B%7D%23mermaid-_r_i0_%20.node%20rect%2C%23mermaid-_r_i0_%20.node%20circle%2C%23mermaid-_r_i0_%20.node%20ellipse%2C%23mermaid-_r_i0_%20.node%20polygon%2C%23mermaid-_r_i0_%20.node%20path%7Bfill%3Argb\(0%2C%2040%2C%2077\)%3Bstroke%3Argba\(255%2C%20255%2C%20255%2C%200.1\)%3Bstroke-width%3A1px%3B%7D%23mermaid-_r_i0_%20.node%20rect%7Brx%3A16px%3Bry%3A16px%3B%7D%23mermaid-_r_i0_%20.node.mermaid-decision%20.label-container%7Bfill%3A%23000e1a%3Bstroke%3Argb\(26%2C%2062%2C%2095\)%3Bstroke-dasharray%3A2%202%3B%7D%23mermaid-_r_i0_%20.edgePaths%20.flowchart-link%7Bstroke%3Argb\(26%2C%2062%2C%2095\)%3Bstroke-width%3A1px%3Bstroke-linecap%3Around%3Bstroke-linejoin%3Around%3B%7D%23mermaid-_r_i0_%20.marker%7Bfill%3Argb\(26%2C%2062%2C%2095\)%3Bstroke%3Argb\(26%2C%2062%2C%2095\)%3B%7D%23mermaid-_r_i0_%20.node%7Bcolor-scheme%3Adark%3B%7D%23mermaid-_r_i0_%20%3Aroot%7B--mermaid-font-family%3A%22-apple-system%22%2C%22BlinkMacSystemFont%22%2C%22Segoe%20UI%22%2C%22Roboto%22%2C%22Oxygen%22%2C%22Ubuntu%22%2C%22Cantarell%22%2C%22Helvetica%20Neue%22%2C%22Arial%22%2C%22sans-serif%22%3B%7D%3C%2Fstyle%3E%3Cg%3E%3Cmarker%20id%3D%22mermaid-_r_i0__flowchart-v2-pointEnd%22%20class%3D%22marker%20flowchart-v2%22%20viewBox%3D%22-5%20-5%2010%2010%22%20refX%3D%220%22%20refY%3D%220%22%20markerUnits%3D%22userSpaceOnUse%22%20markerWidth%3D%2210%22%20markerHeight%3D%2210%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M%200%200%20L%204%200%20M%200.8180194846605362%20-3.181980515339464%20L%204%200%20L%200.8180194846605362%203.181980515339464%22%20class%3D%22arrowMarkerPath%22%20style%3D%22stroke-width%3A%201%3B%20stroke-dasharray%3A%20none%3B%20fill%3A%20none%3B%20stroke-linecap%3A%20round%3B%20stroke-linejoin%3A%20round%3B%22%3E%3C%2Fpath%3E%3C%2Fmarker%3E%3Cmarker%20id%3D%22mermaid-_r_i0__flowchart-v2-pointStart%22%20class%3D%22marker%20flowchart-v2%22%20viewBox%3D%22-5%20-5%2010%2010%22%20refX%3D%220%22%20refY%3D%220%22%20markerUnits%3D%22userSpaceOnUse%22%20markerWidth%3D%2210%22%20markerHeight%3D%2210%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M%200%200%20L%20-4%200%20M%20-0.8180194846605362%20-3.181980515339464%20L%20-4%200%20L%20-0.8180194846605362%203.181980515339464%22%20class%3D%22arrowMarkerPath%22%20style%3D%22stroke-width%3A%201%3B%20stroke-dasharray%3A%20none%3B%20fill%3A%20none%3B%20stroke-linecap%3A%20round%3B%20stroke-linejoin%3A%20round%3B%22%3E%3C%2Fpath%3E%3C%2Fmarker%3E%3Cmarker%20id%3D%22mermaid-_r_i0__flowchart-v2-circleEnd%22%20class%3D%22marker%20flowchart-v2%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%2211%22%20refY%3D%225%22%20markerUnits%3D%22userSpaceOnUse%22%20markerWidth%3D%2211%22%20markerHeight%3D%2211%22%20orient%3D%22auto%22%3E%3Ccircle%20cx%3D%225%22%20cy%3D%225%22%20r%3D%225%22%20class%3D%22arrowMarkerPath%22%20style%3D%22stroke-width%3A%201%3B%20stroke-dasharray%3A%201%2C%200%3B%22%3E%3C%2Fcircle%3E%3C%2Fmarker%3E%3Cmarker%20id%3D%22mermaid-_r_i0__flowchart-v2-circleStart%22%20class%3D%22marker%20flowchart-v2%22%20viewBox%3D%220%200%2010%2010%22%20refX%3D%22-1%22%20refY%3D%225%22%20markerUnits%3D%22userSpaceOnUse%22%20markerWidth%3D%2211%22%20markerHeight%3D%2211%22%20orient%3D%22auto%22%3E%3Ccircle%20cx%3D%225%22%20cy%3D%225%22%20r%3D%225%22%20class%3D%22arrowMarkerPath%22%20style%3D%22stroke-width%3A%201%3B%20stroke-dasharray%3A%201%2C%200%3B%22%3E%3C%2Fcircle%3E%3C%2Fmarker%3E%3Cmarker%20id%3D%22mermaid-_r_i0__flowchart-v2-crossEnd%22%20class%3D%22marker%20cross%20flowchart-v2%22%20viewBox%3D%220%200%2011%2011%22%20refX%3D%2212%22%20refY%3D%225.2%22%20markerUnits%3D%22userSpaceOnUse%22%20markerWidth%3D%2211%22%20markerHeight%3D%2211%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M%201%2C1%20l%209%2C9%20M%2010%2C1%20l%20-9%2C9%22%20class%3D%22arrowMarkerPath%22%20style%3D%22stroke-width%3A%202%3B%20stroke-dasharray%3A%201%2C%200%3B%22%3E%3C%2Fpath%3E%3C%2Fmarker%3E%3Cmarker%20id%3D%22mermaid-_r_i0__flowchart-v2-crossStart%22%20class%3D%22marker%20cross%20flowchart-v2%22%20viewBox%3D%220%200%2011%2011%22%20refX%3D%22-1%22%20refY%3D%225.2%22%20markerUnits%3D%22userSpaceOnUse%22%20markerWidth%3D%2211%22%20markerHeight%3D%2211%22%20orient%3D%22auto%22%3E%3Cpath%20d%3D%22M%201%2C1%20l%209%2C9%20M%2010%2C1%20l%20-9%2C9%22%20class%3D%22arrowMarkerPath%22%20style%3D%22stroke-width%3A%202%3B%20stroke-dasharray%3A%201%2C%200%3B%22%3E%3C%2Fpath%3E%3C%2Fmarker%3E%3C%2Fg%3E%3Cg%20class%3D%22subgraphs%22%3E%3C%2Fg%3E%3Cg%20class%3D%22nodes%22%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-A-0%22%20transform%3D%22translate\(575.2092641194661%2C%20656.6909027099609\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-119.9133529663086%22%20y%3D%22-30%22%20width%3D%22239.8267059326172%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EObserve%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Browser%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20State%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-B-1%22%20transform%3D%22translate\(533.4033915201823%2C%20756.6909027099609\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-125.41761016845703%22%20y%3D%22-30%22%20width%3D%22250.83522033691406%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3ELLM%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Proposes%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Next%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Step%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%20%20mermaid-decision%22%20id%3D%22flowchart-C-3%22%20transform%3D%22translate\(572.3673156738281%2C%2042\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-71.3551139831543%22%20y%3D%22-30%22%20width%3D%22142.7102279663086%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EDecision%3F%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-D-5%22%20transform%3D%22translate\(165.11505126953125%2C%20248\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-104.79971313476562%22%20y%3D%22-30%22%20width%3D%22209.59942626953125%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EPolicy%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20%2B%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Grounding%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-E-7%22%20transform%3D%22translate\(385.5880584716797%2C%20248\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-75.67329406738281%22%20y%3D%22-30%22%20width%3D%22151.34658813476562%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EVerify%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Goal%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-F-9%22%20transform%3D%22translate\(615.1803817749023%2C%20248\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-113.91902923583984%22%20y%3D%22-30%22%20width%3D%22227.8380584716797%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EHuman%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Takes%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Control%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-G-11%22%20transform%3D%22translate\(165.11505126953125%2C%20348\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-99.9772720336914%22%20y%3D%22-30%22%20width%3D%22199.9545440673828%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EPlaywright%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Action%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-H-13%22%20transform%3D%22translate\(165.11505126953125%2C%20448\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-132.11505126953125%22%20y%3D%22-30%22%20width%3D%22264.2301025390625%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EObserve%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20%2B%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Verify%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Outcome%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-I-15%22%20transform%3D%22translate\(165.11505126953125%2C%20552.3454513549805\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-103.86931610107422%22%20y%3D%22-34.34545135498047%22%20width%3D%22207.73863220214844%22%20height%3D%2268.69090270996094%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-18.34545135498047\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3ERecord%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Successful%3C%2Ftspan%3E%3C%2Ftspan%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%221em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3ETransition%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-J-19%22%20transform%3D%22translate\(385.5880584716797%2C%20348\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-71.41193008422852%22%20y%3D%22-30%22%20width%3D%22142.82386016845703%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EComplete%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22node%20default%22%20id%3D%22flowchart-K-21%22%20transform%3D%22translate\(615.1803817749023%2C%20448\)%22%3E%3Crect%20class%3D%22basic%20label-container%22%20style%3D%22%22%20x%3D%22-124.06108093261719%22%20y%3D%22-30%22%20width%3D%22248.12216186523438%22%20height%3D%2260%22%3E%3C%2Frect%3E%3Cg%20class%3D%22label%22%20style%3D%22%22%20transform%3D%22translate\(0%2C%20-9.545454025268555\)%22%3E%3Crect%3E%3C%2Frect%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EVerify%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Safe%3C%2Ftspan%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3E%20Continuation%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edges%20edgePaths%22%3E%3Cpath%20d%3D%22M575.2092641194661%2C686.6909027099609L575.2092641194661%2C714.6909027099609%22%20id%3D%22L_A_B_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_A_B_0%22%20data-points%3D%22W3sieCI6NTc1LjIwOTI2NDExOTQ2NjEsInkiOjY4Ni42OTA5MDI3MDk5NjA5fSx7IngiOjU3NS4yMDkyNjQxMTk0NjYxLCJ5Ijo3MTguNjkwOTAyNzA5OTYwOX1d%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M491.5975189208985%2C726.6909027099609L491.59751892089844%2C713.7619705218265Q491.59751892089844%2C706.6909027099609%20484.52645110903296%2C706.6909027099609L18.782956025294652%2C706.6909027099609Q17%2C706.6909027099609%2015.585786437626904%2C705.605116272334L15.585786437626904%2C705.605116272334Q14.17157287525381%2C704.5193298347072%2013.085786437626915%2C703.105116272334L13.085786437626904%2C703.105116272334Q12%2C701.6909027099609%2012%2C699.9079466846663L12%2C656.6909027099609L12%2C552.3454513549805L12%2C448L12%2C348L12%2C248L12%2C165L12%2C98.78295602529465Q12%2C97%2013.085786437626904%2C95.58578643762691L13.085786437626904%2C95.58578643762691Q14.17157287525381%2C94.17157287525382%2015.585786437626902%2C93.08578643762691L15.585786437626904%2C93.08578643762691Q17%2C92%2018.78295602529466%2C92L522.7712935474592%2C92Q524.5542495727539%2C92%20525.968463135127%2C90.91421356237309L525.968463135127%2C90.91421356237308Q527.3826766975001%2C89.82842712474618%20528.468463135127%2C88.41421356237309L528.468463135127%2C88.41421356237309Q529.5542495727539%2C87%20529.5542495727539%2C85.21704397470535L529.5542495727539%2C82%22%20id%3D%22L_B_C_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_B_C_0%22%20data-points%3D%22W3sieCI6NDkxLjU5NzUxODkyMDg5ODUsInkiOjcyNi42OTA5MDI3MDk5NjA5fSx7IngiOjQ5MS41OTc1MTg5MjA4OTg0NCwieSI6NzA2LjY5MDkwMjcwOTk2MDl9LHsieCI6MTIsInkiOjcwNi42OTA5MDI3MDk5NjA5fSx7IngiOjEyLCJ5Ijo2NTYuNjkwOTAyNzA5OTYwOX0seyJ4IjoxMiwieSI6NTUyLjM0NTQ1MTM1NDk4MDV9LHsieCI6MTIsInkiOjQ0OH0seyJ4IjoxMiwieSI6MzQ4fSx7IngiOjEyLCJ5IjoyNDh9LHsieCI6MTIsInkiOjE2NX0seyJ4IjoxMiwieSI6OTJ9LHsieCI6NTI5LjU1NDI0OTU3Mjc1MzksInkiOjkyfSx7IngiOjUyOS41NTQyNDk1NzI3NTM5LCJ5Ijo3OH1d%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M558.0962936401368%2C72L558.0962936401368%2C105.21704397470535Q558.0962936401368%2C107%20557.0105072025099%2C108.41421356237309L557.0105072025099%2C108.41421356237309Q555.924720764883%2C109.82842712474618%20554.5105072025099%2C110.91421356237308L554.5105072025099%2C110.91421356237309Q553.0962936401368%2C112%20551.3133376148421%2C112L171.8980072948259%2C112Q170.11505126953125%2C112%20168.70083770715814%2C113.08578643762691L168.70083770715814%2C113.08578643762691Q167.28662414478507%2C114.17157287525382%20166.20083770715814%2C115.58578643762691L166.20083770715814%2C115.58578643762691Q165.11505126953125%2C117%20165.11505126953125%2C118.78295602529465L165.11505126953125%2C206%22%20id%3D%22L_C_D_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_C_D_0%22%20data-points%3D%22W3sieCI6NTU4LjA5NjI5MzY0MDEzNjgsInkiOjcyfSx7IngiOjU1OC4wOTYyOTM2NDAxMzY4LCJ5IjoxMTJ9LHsieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5IjoxMTJ9LHsieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5IjoyMTB9XQ%3D%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M586.6383377075196%2C72L586.6383377075196%2C125.21704397470535Q586.6383377075196%2C127%20585.5525512698927%2C128.4142135623731L585.5525512698927%2C128.4142135623731Q584.4667648322658%2C129.82842712474618%20583.0525512698927%2C130.91421356237308L583.0525512698927%2C130.9142135623731Q581.6383377075196%2C132%20579.8553816822249%2C132L392.37101449697434%2C132Q390.5880584716797%2C132%20389.1738449093066%2C133.0857864376269L389.1738449093066%2C133.08578643762692Q387.7596313469335%2C134.17157287525382%20386.6738449093066%2C135.5857864376269L386.6738449093066%2C135.5857864376269Q385.5880584716797%2C137%20385.5880584716797%2C138.78295602529465L385.5880584716797%2C206%22%20id%3D%22L_C_E_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_C_E_0%22%20data-points%3D%22W3sieCI6NTg2LjYzODMzNzcwNzUxOTYsInkiOjcyfSx7IngiOjU4Ni42MzgzMzc3MDc1MTk2LCJ5IjoxMzJ9LHsieCI6Mzg1LjU4ODA1ODQ3MTY3OTcsInkiOjEzMn0seyJ4IjozODUuNTg4MDU4NDcxNjc5NywieSI6MjEwfV0%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M615.1803817749023%2C72L615.1803817749023%2C206%22%20id%3D%22L_C_F_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_C_F_0%22%20data-points%3D%22W3sieCI6NjE1LjE4MDM4MTc3NDkwMjMsInkiOjcyfSx7IngiOjYxNS4xODAzODE3NzQ5MDIzLCJ5IjoyMTB9XQ%3D%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M165.11505126953125%2C278L165.11505126953125%2C306%22%20id%3D%22L_D_G_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_D_G_0%22%20data-points%3D%22W3sieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5IjoyNzh9LHsieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5IjozMTB9XQ%3D%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M165.11505126953125%2C378L165.11505126953125%2C406%22%20id%3D%22L_G_H_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_G_H_0%22%20data-points%3D%22W3sieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5IjozNzh9LHsieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5Ijo0MTB9XQ%3D%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M165.11505126953125%2C478L165.11505126953125%2C506%22%20id%3D%22L_H_I_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_H_I_0%22%20data-points%3D%22W3sieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5Ijo0Nzh9LHsieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5Ijo1MTB9XQ%3D%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M165.11505126953125%2C586.6909027099609L165.11505126953125%2C599.9079466846663Q165.11505126953125%2C601.6909027099609%20166.20083770715814%2C603.105116272334L166.20083770715817%2C603.105116272334Q167.28662414478507%2C604.5193298347072%20168.70083770715814%2C605.605116272334L168.70083770715814%2C605.605116272334Q170.11505126953125%2C606.6909027099609%20171.8980072948259%2C606.6909027099609L528.4551904387353%2C606.6909027099609Q530.2381464640299%2C606.6909027099609%20531.652360026403%2C607.7766891475878L531.652360026403%2C607.7766891475878Q533.0665735887761%2C608.8624755852147%20534.152360026403%2C610.2766891475878L534.152360026403%2C610.2766891475878Q535.2381464640299%2C611.6909027099609%20535.2381464640299%2C613.4738587352556L535.2381464640299%2C616.6909027099609%22%20id%3D%22L_I_A_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_I_A_0%22%20data-points%3D%22W3sieCI6MTY1LjExNTA1MTI2OTUzMTI1LCJ5Ijo1ODYuNjkwOTAyNzA5OTYwOX0seyJ4IjoxNjUuMTE1MDUxMjY5NTMxMjUsInkiOjYwNi42OTA5MDI3MDk5NjA5fSx7IngiOjUzNS4yMzgxNDY0NjQwMjk5LCJ5Ijo2MDYuNjkwOTAyNzA5OTYwOX0seyJ4Ijo1MzUuMjM4MTQ2NDY0MDI5OSwieSI6NjIwLjY5MDkwMjcwOTk2MDl9XQ%3D%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M385.5880584716797%2C278L385.5880584716797%2C306%22%20id%3D%22L_E_J_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_E_J_0%22%20data-points%3D%22W3sieCI6Mzg1LjU4ODA1ODQ3MTY3OTcsInkiOjI3OH0seyJ4IjozODUuNTg4MDU4NDcxNjc5NywieSI6MzEwfV0%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M615.1803817749023%2C278L615.1803817749023%2C348L615.1803817749023%2C406%22%20id%3D%22L_F_K_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_F_K_0%22%20data-points%3D%22W3sieCI6NjE1LjE4MDM4MTc3NDkwMjMsInkiOjI3OH0seyJ4Ijo2MTUuMTgwMzgxNzc0OTAyMywieSI6MzQ4fSx7IngiOjYxNS4xODAzODE3NzQ5MDIzLCJ5Ijo0MTB9XQ%3D%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M615.1803817749023%2C478L615.1803817749023%2C552.3454513549805L615.1803817749023%2C614.6909027099609%22%20id%3D%22L_K_A_0%22%20class%3D%22edge-thickness-normal%20edge-pattern-solid%20edge-thickness-normal%20edge-pattern-solid%20flowchart-link%22%20style%3D%22%3B%22%20data-edge%3D%22true%22%20data-et%3D%22edge%22%20data-id%3D%22L_K_A_0%22%20data-points%3D%22W3sieCI6NjE1LjE4MDM4MTc3NDkwMjMsInkiOjQ3OH0seyJ4Ijo2MTUuMTgwMzgxNzc0OTAyMywieSI6NTUyLjM0NTQ1MTM1NDk4MDV9LHsieCI6NjE1LjE4MDM4MTc3NDkwMjMsInkiOjYxOC42OTA5MDI3MDk5NjA5fV0%3D%22%20marker-end%3D%22url\(%23mermaid-_r_i0__flowchart-v2-pointEnd\)%22%3E%3C%2Fpath%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabels%22%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22stroke%3A%20none%22%3E%3C%2Frect%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_A_B_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_B_C_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%20transform%3D%22translate\(164.92329025268555%2C%20165\)%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_C_D_0%22%20transform%3D%22translate\(-24.808238983154297%2C-8\)%22%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22%22%20x%3D%22-12%22%20y%3D%22-5.000000059604645%22%20width%3D%2273.61647415161133%22%20height%3D%2226%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EACTION%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%20transform%3D%22translate\(385.1079444885254%2C%20165\)%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_C_E_0%22%20transform%3D%22translate\(-21.519886016845703%2C-8\)%22%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22%22%20x%3D%22-12%22%20y%3D%22-5.000000059604645%22%20width%3D%2267.0397720336914%22%20height%3D%2226%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EFINISH%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%20transform%3D%22translate\(614.7499847412109%2C%20165\)%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_C_F_0%22%20transform%3D%22translate\(-31.569602966308594%2C-8\)%22%3E%3Cg%3E%3Crect%20class%3D%22background%22%20style%3D%22%22%20x%3D%22-12%22%20y%3D%22-5.000000059604645%22%20width%3D%2287.13920211791992%22%20height%3D%2226%22%3E%3C%2Frect%3E%3Ctext%20y%3D%22-10.1%22%20style%3D%22%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3Ctspan%20font-style%3D%22normal%22%20class%3D%22text-inner-tspan%22%20font-weight%3D%22normal%22%3EHANDOFF%3C%2Ftspan%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_D_G_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_G_H_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_H_I_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_I_A_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_E_J_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_F_K_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3Cg%20class%3D%22edgeLabel%22%3E%3Cg%20class%3D%22label%22%20data-id%3D%22L_K_A_0%22%20transform%3D%22translate\(0%2C%200\)%22%3E%3Ctext%20y%3D%22-10.1%22%3E%3Ctspan%20class%3D%22text-outer-tspan%22%20x%3D%220%22%20y%3D%22-0.1em%22%20dy%3D%221.1em%22%3E%3C%2Ftspan%3E%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E)
 
 
 #### State Recording and Fingerprinting
@@ -280,21 +245,24 @@ Removing a visible loop is only the first pass. What if an unnecessary action ch
 
 Verification uses a fresh browser session to reproduce the original starting state, execute the proposed action sequence under the applicable execution policy, and confirm that the final observable state matches the original successful discovery. If verification fails, the proposed removal is rejected. The optimization process retains the original candidate path if the shortened workflow cannot be accepted. This two-stage approach separates structural loop removal from execution-verified optimization, allowing the system to simplify exploratory workflows without relying solely on the LLM's judgment about which actions are necessary.
 
+```text
 Original path:   A → B → C → D → E
-                       │
-                       ▼
+                       |
+                       v
 Shorter proposal: A → C → E
-                       │
-                       ▼
+                       |
+                       v
               Fresh browser test
-                       │
+                       |
+                       v
                   Verified?
                   /       \
                 YES        NO
-                 │          │
-                 ▼          ▼
+                 |          |
+                 v          v
           Accept shorter  Keep original
              A → C → E    A → B → C → D → E
+```
 
 ### 3.3 Input and Output Binding
 
@@ -492,18 +460,29 @@ Clicking Search is easy to observe; knowing that the correct member page actuall
 
 For example, after searching for member 67890, a checkpoint containing /members?member_id={{member_id}} is resolved to the expected member-specific URL. The replay engine verifies that the application has reached that route rather than assuming that the search action succeeded merely because Playwright completed the click. This separates the successful execution of a browser interaction from verification of its expected application outcome.
 
+```text
 [REPLAY]
+
 Runtime input : member_id = DEMO-12345
+
 Current URL   : /members/DEMO-12345/accounts
-                         │
-                         ▼
+
+                         |
+                         v
+
 [CHECKPOINT VERIFICATION]
+
 Expected member : DEMO-12345
+
 Observed member : DEMO-12345
+
 Result          : PASSED
-                         │
-                         ▼
-              Continue replay
+
+                         |
+                         v
+
+                 Continue replay
+```
 
 #### Deterministic Output Extraction
 
@@ -531,31 +510,37 @@ class ValidationStatus(str, Enum):
 ```
 
 When a proposed value cannot be directly grounded in the available evidence, the system invokes a separate `ValueValidatorLLM`. This validator receives the proposed action, original request, browser observation, deterministic validation reason, and applicable business validation policy. Its responsibility is limited to evaluating the proposed value; it cannot generate replacement values or propose additional browser actions. The validator returns a structured decision of approve, reject, or escalate_to_human. Rejected actions are not executed, while unresolved decisions can trigger human intervention. This provides a controlled evaluation path for values that require contextual reasoning beyond direct evidence matching.
-
+```text
 LLM proposes action
-        │
-        ▼
+        |
+        v
 Deterministic grounding
-        │
-        ├── REJECT ───────────────────────► Stop / handoff
-        │
-        ├── NEEDS LLM
-        │       │
-        │       ▼
-        │   Bounded value validator
-        │       ├── REJECT ───────────────► Stop / handoff
-        │       ├── ESCALATE ─────────────► Human handoff
-        │       └── APPROVE ──┐
-        │                     │
-        └── APPROVE ──────────┘
-                              │
-                              ▼
-                         Policy check
-                         ├── DENY ───────► Stop / handoff
-                         └── ALLOW
-                              │
-                              ▼
-                       Playwright action
+        |
+        |---- REJECT ----------------------> Stop / handoff
+        |
+        |---- NEEDS LLM
+        |       |
+        |       v
+        |   Bounded value validator
+        |       |
+        |       |---- REJECT --------------> Stop / handoff
+        |       |
+        |       |---- ESCALATE ------------> Human handoff
+        |       |
+        |       |---- APPROVE ----|
+        |                         |
+        |---- APPROVE ------------|
+                                  |
+                                  v
+                             Policy check
+                                  |
+                                  |---- DENY ----> Stop / handoff
+                                  |
+                                  |---- ALLOW
+                                  |
+                                  v
+                           Playwright action
+```
 
 #### Post-Execution Validation
 
@@ -573,25 +558,30 @@ Grounding also extends beyond discovery. When the orchestrator uses the LLM to s
 
 The underlying design principle is that AI contributes reasoning and proposes actions, while application-controlled validation determines whether those proposals are supported by the available evidence and can proceed through the execution lifecycle.
 
+```text
 [LLM PROPOSAL]
+
 Action : CLICK
 Target : "Transfer Funds"
 
-          │
-          ▼
+          |
+          v
 
 [GROUNDING VALIDATION]
+
 Decision : REJECT
 Reason   : Proposed target is not grounded
            in the observed browser state.
 
-          │
-          ▼
+          |
+          v
 
 [EXECUTION]
+
 Playwright action : NOT EXECUTED
 Browser state     : UNCHANGED
 Result            : Validation failure
+```
 
 ### 3.7 Failure Handling and Human Handoff
 
@@ -777,25 +767,53 @@ All 23 test cases passed.
 
 PACKAGE DEPENDENCY RULE
 
+```text
 main.py
-  |    entry point; may import anything
-  v    (only main.py is allowed to import orchestration)
-orchestration
-  |    imports: capability, discovery, handoff, policy, registry, replay, recording, schemas
-  v
-discovery
-  |    imports: llm, policy, observability, recording, schemas, validation, handoff
-  v
-replay ----------- schemas, policy
-capability ------- schemas
-registry --------- schemas
-  |    (these three sit at the same layer as discovery -- none of them
-  |     import discovery; orchestration is what sequences them together)
-  v
-llm ---------- schemas
-recording ----- schemas
-validation ---- schemas
-policy -------- schemas
+  |
+  |  Entry point; may import anything.
+  |  Only main.py is allowed to import orchestration.
   |
   v
-schemas | handoff | observability     <-- leaves: zero agent-internal imports
+orchestration
+  |
+  |  Imports: capability, discovery, handoff, policy,
+  |           registry, replay, recording, schemas
+  |
+  v
+discovery
+  |
+  |  Imports: llm, policy, observability, recording,
+  |           schemas, validation, handoff
+  |
+  |-----------------------------------------------|
+  |                                               |
+  v                                               |
+replay ----------- schemas, policy                 |
+                                                  |
+capability ------- schemas                         |
+                                                  |
+registry --------- schemas                         |
+  |                                               |
+  |  Discovery, replay, capability, and registry   |
+  |  sit at the same architectural layer.         |
+  |                                               |
+  |  None of them import discovery.                |
+  |  Orchestration sequences them together.       |
+  |                                               |
+  v                                               |
+llm ------------ schemas                           |
+                                                  |
+recording ------ schemas                           |
+                                                  |
+validation ----- schemas                           |
+                                                  |
+policy --------- schemas                           |
+  |                                               |
+  v                                               |
+schemas | handoff | observability <----------------|
+  |
+  |  Leaf modules: zero agent-internal imports.
+  |
+  v
+END
+```

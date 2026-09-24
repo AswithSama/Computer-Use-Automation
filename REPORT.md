@@ -2,28 +2,182 @@
 
 ## 1. Architecture
 
-I implemented a browser-based vertical slice against a local, synthetic banking application: a natural-language request is routed to a tenant/application-scoped catalog of approved capabilities; a valid match is replayed, while an unmatched request enters live LLM-driven discovery. During discovery, Playwright observes the application, the model proposes a next action, and application-owned grounding, policy, execution, and outcome checks determine whether that action is recorded. The trajectory recorder preserves the exploration trace while constructing a candidate path; loop removal and fresh-session verification can shorten that path. Verified input/output bindings are compiled into a draft, which requires separate human approval before it becomes eligible for future requests. Replay receives the approved artifact and runtime inputs and follows stored browser actions without model-driven action planning. Python/Pydantic keep schemas and contracts explicit; Playwright supplies a working browser surface; a local JSON registry avoids premature database/service infrastructure. The trade-off is a coherent, testable browser implementation rather than a claim of general computer-use coverage. An LLM still helps *select* a capability in the interactive entry point; “model-free” describes the action-execution replay path, not every surrounding orchestration call.
+### Target application: a local banking demo
+
+I built a local banking website using FastAPI and Jinja2, populated with synthetic member and account records. A user can search for a member by ID, view their email, phone number, and membership status, and retrieve savings or checking balances.
+
+The website presents this information through browser pages and HTML tables. It gives the automation system a controlled environment in which to test navigation, member lookup, data extraction, error handling, and human intervention without accessing real banking systems or customer information.
+
+The demo also includes an `/operations` area that the automation policy intentionally blocks.
+
+### The execution lifecycle
+
+The system follows two paths depending on whether an approved capability already exists for the request:
+
+| Request                                | Execution path                                                                                      |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| An eligible approved capability exists | Select the capability and replay its saved browser actions using the current runtime inputs.        |
+| No valid capability matches            | Start live LLM-driven discovery, verify the resulting workflow, and compile a new draft capability. |
+
+During discovery, Playwright observes the live application and the LLM proposes the next browser action. The application—not the model alone—grounds the proposal, checks policy, executes the action, and verifies its outcome before recording it.
+
+The trajectory recorder preserves the exploration trace while constructing a candidate path. Fingerprint-based loop removal and fresh-session verification can shorten that path without assuming that every apparently redundant action is safe to remove.
+
+Once the input and output bindings have been verified, the compiler produces a versioned **draft capability**. A human must explicitly approve that draft before it becomes eligible for future requests.
+
+### Why this architecture?
+
+I used Python and Pydantic to make component contracts explicit, Playwright to interact with a real browser, and a local JSON registry to keep artifact storage simple and inspectable.
+
+**The key trade-off:** I prioritized a coherent, testable browser implementation over building generalized computer-use infrastructure before validating the core workflow.
+
+An LLM still helps *select* a capability in the interactive entry point. “Model-free replay” refers specifically to the saved browser-action execution path—not to every surrounding orchestration call.
+
+For the complete architecture diagram and component-level walkthrough, see [DEEPDIVE.md — System Architecture](DEEPDIVE.md#2-system-architecture).
 
 ## 2. Artifact schema
 
-The durable capability is a typed, serializable, versioned execution contract, not a raw model transcript. `CapabilityArtifact` declares a semantic capability ID and description, typed required inputs, ordered `CapabilityAction` records with action type/target/value/URL, action-indexed checkpoints, and typed outputs with extraction bindings. The stored registry record adds tenant/application scope, version, approval state, selection context, and relevant business-outcome rules. The compiler replaces verified request-specific values with `{{member_id}}`-style placeholders in supported actions and checkpoint patterns. Inputs are accepted only when grounded in successful recorded fill actions and the original request. The implemented output contract uses a table row condition (e.g., `Type = Savings`) and a value column (`Current Balance`); the proposed binding must extract exactly one value consistent with the discovery observation. This makes later output extraction depend on the *relationship* in the live table, not on a balance cached from the original member. The trade-off is intentionally narrow table support rather than unverifiable, generalized extraction. Drafts and approved snapshots remain distinct; successful discovery alone does not authorize unattended execution.
+### A capability is an execution contract, not a transcript
+
+The durable artifact is typed, serializable, versioned, and designed for reuse. `CapabilityArtifact` defines:
+
+* A semantic capability ID and description.
+* Typed required inputs.
+* Ordered `CapabilityAction` records, including action type, target, value, and URL.
+* Action-indexed checkpoints.
+* Typed outputs and their extraction bindings.
+
+The registry record adds tenant/application scope, version, approval state, selection context, and relevant business-outcome rules.
+
+### How the workflow becomes reusable
+
+The compiler replaces verified request-specific values with runtime placeholders such as `{{member_id}}` in supported actions and checkpoint patterns. An input is accepted only when it is grounded in both the original request and a successfully recorded fill action.
+
+For outputs, the implemented binding uses a meaningful HTML-table relationship:
+
+| Binding component      | Example                                                       |
+| ---------------------- | ------------------------------------------------------------- |
+| Row condition          | `Type = Savings`                                              |
+| Value column           | `Current Balance`                                             |
+| Extraction requirement | Exactly one value matching the verified discovery observation |
+
+This means replay retrieves the balance associated with the *current member’s savings row*, rather than returning a value cached from the original discovery run.
+
+**The key trade-off:** I implemented narrow, verifiable table extraction instead of claiming support for arbitrary page structures. Draft and approved snapshots also remain separate: a successful discovery does not authorize unattended execution.
 
 ## 3. Determinism & error handling
 
-Replay resolves required inputs and validates artifact references before acting; it executes ordered recorded actions through stable role/name-oriented targeting, bounded waits, policy checks, and action-indexed URL/text checkpoints. Checkpoints distinguish a completed browser command from verified arrival at the expected application state. Output extraction requires one unambiguous match. The structured `ReplayResult` separates `success` with outputs, a recognized `business_outcome` such as member-not-found, a `recoverable_failure` such as missing input, `needs_intervention`, and `hard_failure` with category, code, step, and sanitized diagnostics. Known business outcomes are recognized only from configured evidence; an arbitrary missing value is not interpreted as a missing member. Missing/ambiguous targets, failed checkpoints, or missing/ambiguous outputs do not become guessed success. A timeout can leave an action's effect uncertain, so the engine does not blindly retry or skip failed interactions. The current system primarily stops safely or follows a specifically supported, checkpoint-verified human recovery path rather than performing open-ended recovery. Fingerprint-based loop removal and fresh-session verification of candidate shorter paths reduce exploratory detours without assuming every apparently redundant action is safe to drop. These guarantees are scoped to the observed demo app, recorded flow, and supported selectors/bindings; they are not proof against arbitrary UI change.
+### Replay follows a verified path
+
+Before acting, replay resolves required inputs and validates artifact references. It then executes the recorded actions in order using role/name-oriented targeting, bounded waits, active policy checks, and action-indexed URL/text checkpoints.
+
+A completed browser command is not automatically considered a successful step. The relevant checkpoint must confirm that the application reached the expected state, and output extraction must produce exactly one unambiguous match.
+
+### Not every unsuccessful run means the same thing
+
+The structured `ReplayResult` distinguishes outcomes so the caller can respond appropriately:
+
+| Result                | Meaning                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `success`             | The workflow completed and returned its declared outputs.                                |
+| `business_outcome`    | Configured evidence confirms an expected result, such as member-not-found.               |
+| `recoverable_failure` | A condition such as missing required input prevents execution.                           |
+| `needs_intervention`  | The run requires a supported human handoff.                                              |
+| `hard_failure`        | Execution cannot safely continue; the result includes structured, sanitized diagnostics. |
+
+A missing value is not automatically interpreted as a missing member. That business outcome must be supported by configured application evidence.
+
+Similarly, a missing or ambiguous target, failed checkpoint, or missing or ambiguous output cannot become a guessed success. Because a timed-out action may already have affected the application, replay does not blindly retry or skip uncertain interactions.
+
+**The key trade-off:** The system primarily stops safely or follows a specifically supported, checkpoint-verified human recovery path. It does not attempt open-ended model-driven repair during replay.
+
+These guarantees apply to the observed demo application, recorded workflow, and supported selectors and bindings; they are not a guarantee against arbitrary UI changes.
 
 ## 4. Heterogeneity & multi-tenant
 
-**Implemented:** a browser/Playwright execution surface, accessibility-oriented action targeting, and registry eligibility scoped to `tenant_id` and `app_id`. **Proposed extension, not implemented:** isolate observation, control location, action execution, and state extraction behind a surface-adapter interface, leaving the artifact’s typed business contract and the replay result independent of whether an adapter uses DOM/accessibility information, screenshots/coordinates, or OS-level desktop automation. Some locator and checkpoint variants would necessarily be adapter-specific; a single browser locator format cannot itself operate a desktop application. For reuse across institutions, keep a versioned vendor/application-level capability definition and associate tenant-specific configuration or explicitly reviewed locator/route overrides. Before reuse, verify the tenant’s vendor/app version, allowed routes, required controls, checkpoints, and output schema; on incompatibility, quarantine that variant for review or rediscovery rather than silently substituting a nearby target. Tenant-specific authorization and policy must remain enforced at invocation. This is a design direction, not a claim that the current registry shares capabilities across tenants or detects vendor-version drift automatically.
+### What works today
+
+The implemented execution surface is browser-based and uses Playwright with accessibility-oriented action targeting. Registry eligibility is scoped to `tenant_id` and `app_id`.
+
+### How I would extend it
+
+To support legacy web and native desktop applications, I would introduce a surface-adapter interface separating observation, control location, action execution, and state extraction from the artifact’s typed business contract and replay result.
+
+An adapter could use DOM/accessibility information, screenshots and coordinates, or OS-level desktop automation. Locator and checkpoint variants would still need to reflect the capabilities of each surface; a browser locator cannot directly operate a desktop application.
+
+For reuse across institutions, I would maintain a versioned vendor/application-level capability definition with tenant-specific configuration or explicitly reviewed locator and route overrides.
+
+Before allowing reuse, the system would verify the tenant’s vendor/application version, allowed routes, required controls, checkpoints, and output schema. An incompatible variant would be held for review or rediscovery rather than silently redirected to a similar-looking target. Tenant-specific authorization and policy would still apply at invocation.
+
+**Implementation boundary:** Surface adapters, cross-tenant artifact sharing, and automatic vendor-version drift detection are design extensions—not features of the current system.
 
 ## 5. Escalation & handoff
 
-Discovery can hand off when an action cannot be grounded or safely continued; replay can hand off for supported application-level obstacles. The manager pauses automation, retains the **same live browser session**, records an intervention reason and context, and assigns temporary control to a terminal-based human operator. Automation must not act simultaneously with the operator. After the operator signals completion, supported replay continuation independently rechecks the relevant URL/visible-text checkpoint; otherwise the run stops rather than treating a human-entered answer or arbitrary page position as a verified replay result. Intervention events and available screenshots provide continuity and evidence. This is a minimal, real control-transfer seam rather than a full co-browsing console. Operator intervention in a live run does **not** approve a draft capability for future unattended reuse; artifact approval is a separate registry workflow.
+### When automation cannot safely continue
+
+Discovery can request human intervention when an action cannot be grounded or safely continued. Replay can hand off when it encounters a supported application-level obstacle.
+
+The handoff manager pauses automation, preserves the **same live browser session**, records the intervention reason and context, and temporarily transfers control to a terminal-based human operator. Automation and the operator must not act on the session simultaneously.
+
+### What happens when the operator finishes?
+
+During handoff, automation pauses while the authorized operator works in the same live browser session. The intervention preserves the execution phase, current step, reason for escalation, relevant evidence references, and available screenshot evidence.
+
+Before returning control, the operator records what they did using a constrained set of reviewed action summaries. This is persisted as `operator_reported_action` in the handoff evidence rather than as unrestricted free-form text. These summaries are operator-reported declarations, not independently captured browser events.
+
+After the operator signals completion, returning control does not by itself authorize automation to continue. Supported replay continuation independently rechecks the relevant URL or visible-text checkpoint. Only successful verification allows the suspended flow to resume; if the expected state cannot be verified, the run stops. A human-entered answer or arbitrary page position is therefore never treated as a verified replay result.
+
+The resulting handoff record preserves why intervention occurred, what the operator reported doing, how the intervention was resolved, and whether the post-intervention state was verified for safe continuation.
+
 
 ## 6. Safety
 
-The application-owned policy engine constrains origins, routes, action types, and configured target restrictions independently of the model’s proposal or an artifact’s approval state. The demo permits configured member/account browsing but blocks `/operations`; it is a read-only demonstration and does not validate real money movement or irreversible banking operations. Discovery grounding checks that proposed elements and certain values are supported by the observed UI/user request; a bounded validator-LLM path handles cases where deterministic evidence is insufficient without granting arbitrary new action authority. Replay rechecks policy and does not assume a previously approved workflow remains authorized forever. Failure evidence is restricted to reviewed diagnostic fields; sensitive raw inputs, unrestricted page text, URLs, and exception payloads are not intended for persistence in failure reports. This reduces exposure but does not amount to a production security audit: screenshots, demo data, logging configuration, and operator access still require review before any real deployment.
+### Policy remains application-owned
+
+The policy engine constrains permitted origins, routes, action types, and configured targets independently of the LLM’s proposal or a capability’s approval state.
+
+The demo treats configured member and account lookup operations as read-only safe actions. The `/operations` area represents the risky or potentially irreversible action class and is blocked by policy rather than exercised by the automation. This keeps the implemented demonstration read-only while making the safety boundary explicit; the system does not claim to validate real money movement or other irreversible banking operations.
+
+During discovery, grounding checks that proposed elements and certain values are supported by the observed UI and user request. A bounded validator-LLM path can handle cases where deterministic evidence is insufficient, but it does not grant arbitrary new action authority.
+
+Replay rechecks the active policy rather than assuming that an approved artifact remains authorized indefinitely.
+
+### Evidence is useful, but must be constrained
+
+Failure reports retain restricted, reviewed diagnostic fields instead of unrestricted page text, raw inputs, URLs, or exception payloads.
+
+This reduces exposure, but it is not a production security audit. Screenshots, demo data, logging configuration, and operator access would still require review before use with real regulated information.
 
 ## 7. Cuts
 
-I prioritized a complete, observable web-based discovery → verified artifact → explicit approval → deterministic replay → failure/handoff thread rather than breadth. Deliberately outside the implemented scope are native desktop and screenshot/coordinate adapters; generalized non-table output bindings; automatic cross-tenant/vendor-version reuse and drift handling; distributed workers and production tenant isolation; a full operator co-browsing console; unrestricted model-driven replay repair; and production-grade handling of real regulated data and irreversible actions. Semantic/RAG-based *capability retrieval* is a proposed scaling option, not implemented selection infrastructure, and should not be confused with any application-context retrieval used during discovery. Next steps would be to publish a clearly paired, sanitized live discovery/replay trace; test a second, deliberately different application variant through a surface-adapter seam; add compatibility checks and explicit tenant overrides; then extend recoveries and extraction types only where their safety properties can be verified. The provided archive's README references a 23-case runner that was not included in that archive; the final public repository must include it alongside the saved campaign evidence and reproducible setup instructions.
+### What I prioritized
+
+I focused on completing one observable execution lifecycle:
+
+**Natural-language goal → discovery → verified artifact → human approval → deterministic replay → structured outcome or handoff**
+
+The aim was to demonstrate that these pieces work together, including their validation and safety boundaries, rather than implementing a broad collection of partially connected features.
+
+### What I deliberately left out
+
+| Area                | Outside the implemented scope                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Execution surfaces  | Native desktop and screenshot/coordinate adapters.                                                                 |
+| Extraction          | Generalized non-table output bindings.                                                                             |
+| Reuse and scale     | Automatic cross-tenant/vendor-version reuse, drift handling, distributed workers, and production tenant isolation. |
+| Human intervention  | A full operator co-browsing console.                                                                               |
+| Recovery            | Unrestricted model-driven replay repair.                                                                           |
+| Production security | Handling of real regulated data and irreversible banking actions at production standard.                           |
+
+Semantic/RAG-based *capability retrieval* is another proposed scaling option, not implemented selection infrastructure. It should not be confused with any application-context retrieval used during discovery.
+
+### What I would build next
+
+The current implementation already demonstrates the complete capability lifecycle, including live LLM-driven discovery, verified capability generation, human approval, deterministic replay, structured outcomes, failure handling, human-assisted recovery, and saved execution evidence.
+
+The next step would be to validate the architecture against a second, deliberately different application surface through the proposed surface-adapter seam. This would test whether the separation between the capability contract and the underlying browser or desktop interaction mechanism holds beyond the original demo application.
+
+From there, I would introduce explicit application/version compatibility checks and tenant-specific overrides to support controlled capability reuse across institutions running variants of the same vendor product. After establishing those reuse boundaries, I would expand the supported output-binding strategies and add narrowly scoped recovery mechanisms for additional runtime conditions, with explicit verification criteria for each extension.
+
+**The guiding decision:** Keep the verified core lifecycle stable while extending the system outward—first across application surfaces and tenant variants, then into broader extraction and recovery behavior—without weakening the validation, policy, and evidence guarantees already established.
+
